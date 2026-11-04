@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<!-- saved from url=(0059)file:///Users/kjellkuban/Downloads/triathlon_dashboard.html -->
+<html lang="de"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Triathlon Training Dashboard</title>
+<style>
+:root{--bg:#0f172a;--card:#1e293b;--card2:#273449;--text:#e2e8f0;--muted:#94a3b8;--accent:#38bdf8;--green:#22c55e;--yellow:#eab308;--red:#ef4444;--purple:#a78bfa}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,Segoe UI,Arial,sans-serif}
+header{padding:18px 24px;background:#0b1220;border-bottom:1px solid #334155;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+h1{margin:0;font-size:20px}
+.sub{color:var(--muted);font-size:13px}
+nav{display:flex;gap:8px;padding:12px 24px;background:#0b1220;border-bottom:1px solid #334155;overflow-x:auto}
+nav button{background:var(--card);color:var(--text);border:1px solid #334155;padding:9px 14px;border-radius:10px;cursor:pointer;font-size:14px}
+nav button.active{background:var(--accent);color:#04121f;border-color:var(--accent);font-weight:700}
+main{padding:20px 24px 40px}
+.sheet{display:none}
+.sheet.active{display:block}
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.g4{grid-template-columns:repeat(4,minmax(0,1fr))}
+@media(max-width:1000px){.g3,.g4{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:640px){.g2,.g3,.g4{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid #334155;border-radius:14px;padding:16px}
+.card h3{margin:0 0 10px;font-size:15px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.kpi{font-size:30px;font-weight:800;line-height:1.1}
+.kpi small{font-size:14px;color:var(--muted);font-weight:600}
+.delta{font-size:12px;margin-top:6px;color:var(--muted)}
+.badge{display:inline-block;padding:4px 9px;border-radius:999px;font-size:12px;font-weight:700}
+.ok{background:rgba(34,197,94,.15);color:var(--green)}
+.warn{background:rgba(234,179,8,.15);color:var(--yellow)}
+.bad{background:rgba(239,68,68,.15);color:var(--red)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:9px 8px;text-align:left;border-bottom:1px solid #334155;white-space:nowrap}
+th{color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase}
+tr:hover td{background:#243147}
+.scroll{overflow-x:auto}
+.bar{height:9px;background:#334155;border-radius:999px;overflow:hidden;margin-top:7px}
+.bar span{display:block;height:100%;background:var(--accent)}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:10px}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px}
+.note{font-size:12px;color:var(--muted);margin-top:8px}
+input,select{background:#0b1220;color:var(--text);border:1px solid #334155;border-radius:8px;padding:8px;font-size:13px}
+.filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.season-toggle{background:var(--card);color:var(--text);border:1px solid #334155;padding:8px 12px;border-radius:8px;cursor:pointer;font-size:13px}
+.primary-btn{background:#0ea5e9;color:#fff;border:none;padding:10px 16px;border-radius:10px;font-weight:800;cursor:pointer;font-size:14px;box-shadow:0 6px 18px rgba(14,165,233,.25)}
+.primary-btn:hover{background:#0284c7}
+.secondary-toggle{background:#1e293b;color:#e2e8f0;border:1px solid #38bdf8;box-shadow:none}
+.secondary-toggle:hover{background:#273449}
+.recovery-actions{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+.icon-btn{background:transparent;border:none;cursor:pointer;font-size:14px;padding:4px;color:var(--accent)}
+.icon-btn:hover{color:#7dd3fc}
+.season-hours,.season-type{width:110px}
+.cal-input{width:150px}
+.cal-day{border:1px solid #334155;border-radius:12px;padding:12px;margin-bottom:10px;background:#16223a}
+.cal-day-head{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.cal-day-head span{color:var(--muted);font-size:12px}
+.cal-session{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+.trash-btn{background:transparent;border:none;color:#ef4444;font-size:15px;cursor:pointer;padding:4px}
+.trash-btn:hover{color:#fca5a5}
+.undo-toast{position:fixed;left:50%;bottom:24px;background:#f8fafc;color:#0f172a;padding:10px 14px;border-radius:12px;display:none;gap:12px;align-items:center;box-shadow:0 16px 40px rgba(0,0,0,.4);z-index:200}
+.undo-toast.show{display:flex}
+.undo-toast button{background:#0ea5e9;color:#fff;border:none;padding:7px 12px;border-radius:8px;font-weight:700;cursor:pointer}
+.modal-overlay{position:fixed;inset:0;background:rgba(2,6,23,.72);display:none;align-items:center;justify-content:center;padding:20px;z-index:100}
+.modal-overlay.open{display:flex}
+.modal-light{background:#f8fafc;color:#0f172a;border-radius:16px;max-width:860px;width:100%;max-height:90vh;overflow:auto;padding:22px;box-shadow:0 24px 60px rgba(0,0,0,.45)}
+.modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.modal-head h3{margin:0;color:#0f172a;text-transform:none;letter-spacing:0;font-size:18px}
+.modal-close{background:#e2e8f0;border:none;color:#0f172a;width:32px;height:32px;border-radius:50%;font-size:18px;cursor:pointer}
+.workout-form{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+.workout-form label{display:flex;flex-direction:column;gap:5px;font-size:12px;font-weight:600;color:#475569}
+.workout-form input,.workout-form select{background:#fff;color:#0f172a;border:1px solid #cbd5e1;border-radius:8px;padding:9px;font-size:13px}
+.zone-form{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.zone-form label{display:flex;flex-direction:column;gap:5px;font-size:12px;font-weight:600;color:#475569}
+.zone-form input{background:#fff;color:#0f172a;border:1px solid #cbd5e1;border-radius:8px;padding:9px;font-size:13px}
+.modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:18px}
+.modal-save{background:#0ea5e9;color:#fff;border:none;padding:10px 16px;border-radius:9px;font-weight:700;cursor:pointer}
+.modal-cancel{background:#e2e8f0;color:#0f172a;border:none;padding:10px 16px;border-radius:9px;cursor:pointer}
+.ortho-val{display:block;font-weight:700;color:var(--text)}
+.ortho-val.ortho-out{color:var(--red);font-weight:800}
+.ortho-val.ortho-in{color:var(--text)}
+.ortho-base{font-size:10px;color:var(--muted);margin-top:3px;white-space:normal;font-weight:400}
+/* Mobile layout */
+.mobile-nav{display:none}
+@media(max-width:700px){
+ header{padding:14px 16px}
+ header .sub:last-child{display:none}
+ nav{display:none}
+ main{padding:14px 14px 96px}
+ .grid,.g2,.g3,.g4{grid-template-columns:1fr}
+ .card{padding:14px}
+ .kpi{font-size:24px}
+ .filters{gap:8px}
+ .filters select,.filters input{width:100%}
+ .filters .primary-btn,.recovery-actions .primary-btn{width:100%}
+ .recovery-actions{flex-direction:column}
+ .primary-btn{padding:13px 16px;font-size:15px}
+ .secondary-toggle{width:100%}
+ .season-toggle{width:100%}
+ .cal-input{width:100%}
+ .cal-session{flex-direction:column}
+ .cal-day-head{flex-wrap:wrap}
+ .workout-form{grid-template-columns:1fr}
+ .zone-form{grid-template-columns:1fr}
+ .modal-overlay{padding:0;align-items:flex-end}
+ .modal-light{max-width:none;border-radius:18px 18px 0 0;max-height:92vh;padding:18px 16px 24px}
+ .modal-actions{flex-direction:column}
+ .modal-save,.modal-cancel{width:100%}
+ .undo-toast{bottom:84px;width:calc(100% - 28px);justify-content:space-between}
+ .scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+ table{min-width:640px}
+ .mobile-nav{display:flex;position:fixed;left:0;right:0;bottom:0;background:#0b1220;border-top:1px solid #334155;padding:8px 6px calc(8px + env(safe-area-inset-bottom));gap:4px;z-index:90}
+ .mobile-nav button{flex:1;background:transparent;color:var(--muted);border:none;padding:8px 2px;border-radius:10px;font-size:11px;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer}
+ .mobile-nav button.active{color:var(--accent);background:rgba(56,189,248,.12)}
+ .mobile-nav .icon{font-size:18px}
+}
+</style>
+</head>
+<body style="overscroll-behavior-x: auto;">
+<header>
+<div><h1>Triathlon Training Dashboard</h1><div class="sub">Stand: 29.10.2026 · Beispieldaten – durch eigene Werte ersetzbar</div></div>
+<div class="sub">Wettkämpfe: Berlin Mitteldistanz 05.06.2027 · <b id="raceCountdownBerlin"></b> &nbsp;|&nbsp; Ostseeman 01.08.2027 · <b id="raceCountdownOstseeman"></b></div>
+</header>
+
+<nav>
+<button class="active" data-sheet="overview">1 · Täglicher Überblick</button>
+<button data-sheet="season">2 · Saisonplan</button>
+<button data-sheet="training">3 · Absolviertes Training</button>
+<button data-sheet="recovery">4 · Recovery</button>
+</nav>
+
+<main>
+<section id="overview" class="sheet active">
+<div class="grid g4">
+<div class="card"><h3>Recovery heute</h3><div class="kpi">78<small>/100</small></div><div class="badge ok">Gute Belastbarkeit</div><div class="bar"><span style="width:78%"></span></div></div>
+<div class="card"><h3>Trainingslast 7 Tage</h3><div class="kpi">1.240<small> BEL</small></div><div class="delta">Dauer × RPE · Vorwoche: 1.085</div></div>
+<div class="card"><h3>Cardio Load 7 Tage</h3><div class="kpi">486</div><div class="delta">Polar · Tendenz: +12 %</div></div>
+<div class="card"><h3>Überlastungsrisiko</h3><div class="kpi" style="color:var(--yellow)">Mittel</div><div class="badge warn">Acute:Chronic 1,28</div><div class="note">Bei &gt;1,5 Belastung reduzieren.</div></div>
+</div>
+
+<div class="grid g2" style="margin-top:14px">
+<div class="card"><h3>Training letzte 7 Tage</h3>
+<table><thead><tr><th>Tag</th><th>Sport</th><th>Dauer</th><th>Distanz</th><th>Belastung</th></tr></thead><tbody>
+<tr><td>Do</td><td>Schwimmen</td><td>60 min</td><td>1,8 km</td><td>120</td></tr>
+<tr><td>Fr</td><td>Kraft</td><td>45 min</td><td>–</td><td>90</td></tr>
+<tr><td>Sa</td><td>Rad Outdoor</td><td>3:10 h</td><td>92 km</td><td>380</td></tr>
+<tr><td>So</td><td>Laufen</td><td>70 min</td><td>12,4 km</td><td>210</td></tr>
+<tr><td>Mo</td><td>Regeneration</td><td>30 min</td><td>–</td><td>30</td></tr>
+<tr><td>Di</td><td>Schwimmen</td><td>65 min</td><td>2,0 km</td><td>130</td></tr>
+<tr><td>Mi</td><td>Rad Indoor</td><td>75 min</td><td>38 km</td><td>280</td></tr>
+</tbody></table></div>
+
+<div class="card"><h3>Training nächste 7 Tage</h3>
+<table><thead><tr><th>Tag</th><th>Einheit</th><th>Ziel</th><th>Umfang</th></tr></thead><tbody>
+<tr><td>Do</td><td>Laufen · VO2max</td><td>6×3 min / 3 min</td><td>70 min</td></tr>
+<tr><td>Fr</td><td>Schwimmen · Technik</td><td>Drills + Z2</td><td>60 min</td></tr>
+<tr><td>Sa</td><td>Rad · Sweet Spot</td><td>3×15 min</td><td>2:30 h</td></tr>
+<tr><td>So</td><td>Laufen · Long Run</td><td>Z2</td><td>1:45 h</td></tr>
+<tr><td>Mo</td><td>Ruhetag / Mobility</td><td>Erholung</td><td>30 min</td></tr>
+<tr><td>Di</td><td>Schwimmen · Intervalle</td><td>10×100 m</td><td>65 min</td></tr>
+<tr><td>Mi</td><td>Rad · Z2</td><td>Grundlagenausdauer</td><td>1:30 h</td></tr>
+</tbody></table></div>
+</div>
+
+<div class="grid g3" style="margin-top:14px">
+<div class="card"><h3>Ermüdung &amp; Warnung</h3>
+<table><tbody>
+<tr><td>HRV-Trend</td><td><span class="badge warn">-8 %</span></td></tr>
+<tr><td>Ruhepuls</td><td>52 bpm · <span class="badge ok">stabil</span></td></tr>
+<tr><td>Schlaf 7-Tage-Ø</td><td>7:12 h</td></tr>
+<tr><td>Muskuläre Ermüdung</td><td><span class="badge warn">3/5</span></td></tr>
+<tr><td>Empfehlung</td><td>Heute Intensität ok, morgen optional leichter.</td></tr>
+</tbody></table></div>
+
+<div class="card"><h3>Wettkämpfe</h3>
+<table><thead><tr><th>Wettkampf</th><th>Datum</th><th>Tage</th></tr></thead><tbody>
+<tr><td>Frühjahrshalbmarathon</td><td>15.03.2027</td><td>137</td></tr>
+<tr><td>Ironman 70.3</td><td>25.04.2027</td><td>168</td></tr>
+<tr><td>Olympische Distanz</td><td>11.07.2027</td><td>275</td></tr>
+</tbody></table></div>
+
+<div class="card"><h3>Aktuelle Grundlage</h3>
+<table><tbody>
+<tr><td>1000 m Schwimmen</td><td><b>17:40 min</b></td></tr>
+<tr><td>5 km Laufen</td><td><b>22:15 min</b> · 4:27 min/km</td></tr>
+<tr><td>FTP Rad</td><td><b>255 W</b></td></tr>
+<tr><td>FTP/kg</td><td>3,54 W/kg</td></tr>
+</tbody></table></div>
+</div>
+
+<div class="grid g3" style="margin-top:14px">
+<div class="card"><h3>Zonenverteilung pro Monat</h3>
+<div class="filters"><select id="zoneMonth" class="season-type" style="width:auto"></select></div>
+<div id="zoneChart"></div><div id="zoneDetails" class="legend"></div>
+<div class="note">Das Kreisdiagramm zeigt die Verteilung der Trainingsminuten auf die Zonen im ausgewählten Monat.</div></div>
+<div class="card"><h3>Ernährung heute</h3><div class="kpi">2.850<small> kcal gegessen</small></div><div class="delta">Verbrauch: 3.120 kcal · Defizit: 270 kcal</div><div class="bar"><span style="width:91%"></span></div></div>
+<div class="card"><h3>Gewicht</h3><div class="kpi">72,1<small> kg</small></div><div class="delta">7-Tage-Ø: 72,3 kg · Trend: -0,2 kg</div></div>
+<div class="card"><h3>Wöchentliche Verteilung</h3>
+<div>Schwimmen <span style="float:right">3,8 km</span><div class="bar"><span style="width:25%;background:#38bdf8"></span></div></div>
+<div style="margin-top:10px">Rad <span style="float:right">130 km</span><div class="bar"><span style="width:70%;background:#22c55e"></span></div></div>
+<div style="margin-top:10px">Laufen <span style="margin-left:0;float:right">32,4 km</span><div class="bar"><span style="width:45%;background:#eab308"></span></div></div>
+<div style="margin-top:10px">Kraft <span style="float:right">75 min</span><div class="bar"><span style="width:20%;background:#a78bfa"></span></div></div>
+</div>
+</div>
+</section>
+
+<section id="season" class="sheet">
+<div class="card"><h3>Saisonplan 2026/2027</h3>
+<div class="legend"><span><span class="dot" style="background:#38bdf8"></span>Grundlagen</span><span><span class="dot" style="background:#22c55e"></span>Umfang</span><span><span class="dot" style="background:#eab308"></span>Harte Trainingswoche</span><span><span class="dot" style="background:#f97316"></span>Spezifität</span><span><span class="dot" style="background:#ef4444"></span>Spitze</span><span><span class="dot" style="background:#a78bfa"></span>Taper</span><span><span class="dot" style="background:#64748b"></span>Recovery-Woche</span><span><span class="dot" style="background:#ffffff"></span>Wettkampfwoche</span></div>
+<div style="margin-top:14px"><div id="seasonChart"></div></div>
+<div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+<button id="toggleSeasonTable" class="season-toggle">Tabelle & Bearbeitung ausblenden</button>
+<button id="toggleSeasonCalendar" class="season-toggle">Wochenkalender ausblenden</button>
+</div>
+<div id="seasonTableWrap" class="scroll" style="margin-top:14px">
+<table><thead><tr><th>Woche</th><th>Zeitraum</th><th>Trainingsstunden</th><th>Wochentyp</th></tr></thead><tbody id="seasonRows"></tbody></table>
+</div>
+<div id="seasonCalendarWrap" style="margin-top:16px">
+<div class="card"><h3>Wochenkalender</h3>
+<div class="filters"><button id="calPrev" class="season-toggle">←</button><select id="calWeek" class="season-type" style="width:auto"></select><button id="calNext" class="season-toggle">→</button><span class="note" id="calWeekLabel"></span></div>
+<div id="calendarDays"></div>
+<div class="note">Mit „+ Trainingseinheit“ kannst du an einem Tag weitere Einheiten ergänzen. Änderungen in der aktuellen Woche aktualisieren automatisch den täglichen Überblick.</div>
+</div></div>
+<div class="note">Trage die Stunden ein oder wähle einen Wochentyp – Diagramm, Farbe und Beschriftung aktualisieren sich automatisch.</div>
+</div>
+<script>
+let seasonData=[{"w": 1, "start": "2026-11-02", "end": "2026-11-08", "type": "Grundlagen", "hours": 8, "days": [{"date": "2026-11-02", "sessions": [{"sport": "Schwimmen", "session": "Technik + Z2", "duration": "1:00"}]}, {"date": "2026-11-03", "sessions": [{"sport": "Rad", "session": "Grundlagen Z2", "duration": "1:30"}]}, {"date": "2026-11-04", "sessions": [{"sport": "Laufen", "session": "Z2", "duration": "1:00"}]}, {"date": "2026-11-05", "sessions": [{"sport": "Kraft", "session": "Ganzkörper", "duration": "0:45"}]}, {"date": "2026-11-06", "sessions": [{"sport": "Rad", "session": "Long Ride", "duration": "2:30"}]}, {"date": "2026-11-07", "sessions": [{"sport": "Laufen", "session": "Long Run", "duration": "1:30"}]}, {"date": "2026-11-08", "sessions": [{"sport": "Ruhetag", "session": "Mobility / Erholung", "duration": "0:30"}]}]}, {"w": 2, "start": "2026-11-09", "end": "2026-11-15", "type": "Grundlagen", "hours": 8, "days": [{"date": "2026-11-09", "sessions": [{"sport": "Schwimmen", "session": "Technik + Z2", "duration": "1:00"}]}, {"date": "2026-11-10", "sessions": [{"sport": "Rad", "session": "Grundlagen Z2", "duration": "1:30"}]}, {"date": "2026-11-11", "sessions": [{"sport": "Laufen", "session": "Z2", "duration": "1:00"}]}, {"date": "2026-11-12", "sessions": [{"sport": "Kraft", "session": "Ganzkörper", "duration": "0:45"}]}, {"date": "2026-11-13", "sessions": [{"sport": "Rad", "session": "Long Ride", "duration": "2:30"}]}, {"date": "2026-11-14", "sessions": [{"sport": "Laufen", "session": "Long Run", "duration": "1:30"}]}, {"date": "2026-11-15", "sessions": [{"sport": "Ruhetag", "session": "Mobility / Erholung", "duration": "0:30"}]}]}, {"w": 3, "start": "2026-11-16", "end": "2026-11-22", "type": "Grundlagen", "hours": 8, "days": [{"date": "2026-11-16", "sessions": [{"sport": "Schwimmen", "session": "Technik + Z2", "duration": "1:00"}]}, {"date": "2026-11-17", "sessions": [{"sport": "Rad", "session": "Grundlagen Z2", "duration": "1:30"}]}, {"date": "2026-11-18", "sessions": [{"sport": "Laufen", "session": "Z2", "duration": "1:00"}]}, {"date": "2026-11-19", "sessions": [{"sport": "Kraft", "session": "Ganzkörper", "duration": "0:45"}]}, {"date": "2026-11-20", "sessions": [{"sport": "Rad", "session": "Long Ride", "duration": "2:30"}]}, {"date": "2026-11-21", "sessions": [{"sport": "Laufen", "session": "Long Run", "duration": "1:30"}]}, {"date": "2026-11-22", "sessions": [{"sport": "Ruhetag", "session": "Mobility / Erholung", "duration": "0:30"}]}]}, {"w": 4, "start": "2026-11-23", "end": "2026-11-29", "type": "Recovery", "hours": 4, "days": [{"date": "2026-11-23", "sessions": [{"sport": "Schwimmen", "session": "Technik + Z2", "duration": "1:00"}]}, {"date": "2026-11-24", "sessions": [{"sport": "Rad", "session": "Grundlagen Z2", "duration": "1:30"}]}, {"date": "2026-11-25", "sessions": [{"sport": "Laufen", "session": "Z2", "duration": "1:00"}]}, {"date": "2026-11-26", "sessions": [{"sport": "Kraft", "session": "Ganzkörper", "duration": "0:45"}]}, {"date": "2026-11-27", "sessions": [{"sport": "Rad", "session": "Long Ride", "duration": "2:30"}]}, {"date": "2026-11-28", "sessions": [{"sport": "Laufen", "session": "Long Run", "duration": "1:30"}]}, {"date": "2026-11-29", "sessions": [{"sport": "Ruhetag", "session": "Mobility / Erholung", "duration": "0:30"}]}]}, {"w": 5, "start": "2026-11-30", "end": "2026-12-06", "type": "Grundlagen", "hours": 8, "days": [{"date": "2026-11-30", "sessions": [{"sport": "Schwimmen", "session": "Technik + Z2", "duration": "1:00"}]}, {"date": "2026-12-01", "sessions": [{"sport": "Rad", "session": "Grundlagen Z2", "duration": "1:30"}]}, {"date": "2026-12-02", "sessions": [{"sport": "Laufen", "session": "Z2", "duration": "1:00"}]}, {"date": "2026-12-03", "sessions": [{"sport": "Kraft", "session": "Ganzkörper", "duration": "0:45"}]}, {"date": "2026-12-04", "sessions": [{"sport": "Rad", "session": "Long Ride", "duration": "2:30"}]}, {"date": "2026-12-05", "sessions": [{"sport": "Laufen", "session": "Long Run", "duration": "1:30"}]}, {"date": "2026-12-06", "sessions": [{"sport": "Ruhetag", "session": "Mobility / Erholung", "duration": "0:30"}]}]}, {"w": 6, "start": "2026-12-07", "end": "2026-12-13", "type": "Grundlagen", "hours": 8, "days": [{"date": "2026-12-07", "sessions": [{"sport": "Schwimmen", "session": "Technik + Z2", "duration": "1:00"}]}, {"date": "2026-12-08", "sessions": [{"sport": "Rad", "session": "Grundlagen Z2", "duration": "1:30"}]}, {"date": "2026-12-09", "sessions": [{"sport": "Laufen", "session": "Z2", "duration": "1:00"}]}, {"date": "2026-12-10", "sessions": [{"sport": "Kraft", "session": "Ganzkörper", "duration": "0:45"}]}, {"date": "2026-12-11", "sessions": [{"sport": "Rad", "session": "Long Ride", "duration": "2:30"}]}, {"date": "2026-12-12", "sessions": [{"sport": "Laufen", "session": "Long Run", "duration": "1:30"}]}, {"date": "2026-12-13", "sessions": [{"sport": "Ruhetag", "session": "Mobility / Erholung", "duration": "0:30"}]}]}, {"w": 7, "start": "2026-12-14", "end": "2026-12-20", "type": "Grundlagen", "hours": 8, "days": [{"date": "2026-12-14", "sessions": [{"sport": "Schwimmen", "session": "Technik + Z2", "duration": "1:00"}]}, {"date": "2026-12-15", "sessions": [{"sport": "Rad", "session": "Grundlagen Z2", "duration": "1:30"}]}, {"date": "2026-12-16", "sessions": [{"sport": "Laufen", "session": "Z2", "duration": "1:00"}]}, {"date": "2026-12-17", "sessions": [{"sport": "Kraft", "session": "Ganzkörper", "duration": "0:45"}]}, {"date": "2026-12-18", "sessions": [{"sport": "Rad", "session": "Long Ride", "duration": "2:30"}]}, {"date": "2026-12-19", "sessions": [{"sport": "Laufen", "session": "Long Run", "duration": "1:30"}]}, {"date": "2026-12-20", "sessions": [{"sport": "Ruhetag", "session": "Mobility / Erholung", "duration": "0:30"}]}]}, {"w": 8, "start": "2026-12-21", "end": "2026-12-27", "type": "Recovery", "hours": 4, "days": [{"date": "2026-12-21", "sessions": [{"sport": "Schwimmen", "session": "Technik + Z2", "duration": "1:00"}]}, {"date": "2026-12-22", "sessions": [{"sport": "Rad", "session": "Grundlagen Z2", "duration": "1:30"}]}, {"date": "2026-12-23", "sessions": [{"sport": "Laufen", "session": "Z2", "duration": "1:00"}]}, {"date": "2026-12-24", "sessions": [{"sport": "Kraft", "session": "Ganzkörper", "duration": "0:45"}]}, {"date": "2026-12-25", "sessions": [{"sport": "Rad", "session": "Long Ride", "duration": "2:30"}]}, {"date": "2026-12-26", "sessions": [{"sport": "Laufen", "session": "Long Run", "duration": "1:30"}]}, {"date": "2026-12-27", "sessions": [{"sport": "Ruhetag", "session": "Mobility / Erholung", "duration": "0:30"}]}]}, {"w": 9, "start": "2026-12-28", "end": "2027-01-03", "type": "Umfang", "hours": 10, "days": [{"date": "2026-12-28", "sessions": [{"sport": "Schwimmen", "session": "Technik + Z2", "duration": "1:00"}]}, {"date": "2026-12-29", "sessions": [{"sport": "Rad", "session": "Grundlagen Z2", "duration": "1:30"}]}, {"date": "2026-12-30", "sessions": [{"sport": "Laufen", "session": "Z2", "duration": "1:00"}]}, {"date": "2026-12-31", "sessions": [{"sport": "Kraft", "session": "Ganzkörper", "duration": "0:45"}]}, {"date": "2027-01-01", "sessions": [{"sport": "Rad", "session": "Long Ride", "duration": "2:30"}]}, {"date": "2027-01-02", "sessions": [{"sport": "Laufen", "session": "Long Run", "duration": "1:30"}]}, {"date": "2027-01-03", "sessions": [{"sport": "Ruhetag", "session": "Mobility / Erholung", "duration": "0:30"}]}]}, {"w": 10, "start": "2027-01-04", "end": "2027-01-10", "type": "Umfang", "hours": 10, "days": [{"date": "2027-01-04", "sessions": [{"sport": "Schwimmen", "session": "Technik + Z2", "duration": "1:00"}]}, {"date": "2027-01-05", "sessions": [{"sport": "Rad", "session": "Grundlagen Z2", "duration": "1:30"}]}, {"date": "2027-01-06", "sessions": [{"sport": "Laufen", "session": "Z2", "duration": "1:00"}]}, {"date": "2027-01-07", "sessions": [{"sport": "Kraft", "session": "Ganzkörper", "duration": "0:45"}]}, {"date": "2027-01-08", "sessions": [{"sport": "Rad", "session": "Long Ride", "duration": "2:30"}]}, {"date": "2027-01-09", "sessions": [{"sport": "Laufen", "session": "Long Run", "duration": "1:30"}]}, {"date": "2027-01-10", "sessions": [{"sport": "Ruhetag", "session": "Mobility / Erholung", "duration": "0:30"}]}]}, {"w": 11, "start": "2027-01-11", "end": "2027-01-17", "type": "Umfang", "hours": 10, "days": [{"date": "2027-01-11", "sessions": [{"sport": "Schwimmen", "session": "Technik + Z2", "duration": "1:00"}]}, {"date": "2027-01-12", "sessions": [{"sport": "Rad", "session": "Grundlagen Z2", "duration": "1:30"}]}, {"date": "2027-01-13", "sessions": [{"sport": "Laufen", "session": "Z2", "duration": "1:00"}]}, {"date": "2027-01-14", "sessions": [{"sport": "Kraft", "session": "Ganzkörper", "duration": "0:45"}]}, {"date": "2027-01-15", "sessions": [{"sport": "Rad", "session": "Long Ride", "duration": "2:30"}]}, {"date": "2027-01-16", "sessions": [{"sport": "Laufen", "session": "Long Run", "duration": "1:30"}]}, {"date": "2027-01-17", "sessions": [{"sport": "Ruhetag", "session": "Mobility / Erholung", "duration": "0:30"}]}]}, {"w": 12, "start": "2027-01-18", "end": "2027-01-24", "type": "Recovery", "hours": 4.5, "days": [{"date": "2027-01-18", "sessions": [{"sport": "Schwimmen", "session": "Technik + Z2", "duration": "1:00"}]}, {"date": "2027-01-19", "sessions": [{"sport": "Rad", "session": "Grundlagen Z2", "duration": "1:30"}]}, {"date": "2027-01-20", "sessions": [{"sport": "Laufen", "session": "Z2", "duration": "1:00"}]}, {"date": "2027-01-21", "sessions": [{"sport": "Kraft", "session": "Ganzkörper", "duration": "0:45"}]}, {"date": "2027-01-22", "sessions": [{"sport": "Rad", "session": "Long Ride", "duration": "2:30"}]}, {"date": "2027-01-23", "sessions": [{"sport": "Laufen", "session": "Long Run", "duration": "1:30"}]}, {"date": "2027-01-24", "sessions": [{"sport": "Ruhetag", "session": "Mobility / Erholung", "duration": "0:30"}]}]}, {"w": 13, "start": "2027-01-25", "end": "2027-01-31", "type": "Umfang", "hours": 10, "days": [{"date": "2027-01-25", "sessions": [{"sport": "Schwimmen", "session": "Technik + Z2", "duration": "1:00"}]}, {"date": "2027-01-26", "sessions": [{"sport": "Rad", "session": "Grundlagen Z2", "duration": "1:30"}]}, {"date": "2027-01-27", "sessions": [{"sport": "Laufen", "session": "Z2", "duration": "1:00"}]}, {"date": "2027-01-28", "sessions": [{"sport": "Kraft", "session": "Ganzkörper", "duration": "0:45"}]}, {"date": "2027-01-29", "sessions": [{"sport": "Rad", "session": "Long Ride", "duration": "2:30"}]}, {"date": "2027-01-30", "sessions": [{"sport": "Laufen", "session": "Long Run", "duration": "1:30"}]}, {"date": "2027-01-31", "sessions": [{"sport": "Ruhetag", "session": "Mobility / Erholung", "duration": "0:30"}]}]}, {"w": 14, "start": "2027-02-01", "end": "2027-02-07", "type": "Umfang", "hours": 10, "days": [{"date": "2027-02-01", "sessions": [{"sport": "Schwimmen", "session": "Technik + Z2", "duration": "1:00"}]}, {"date": "2027-02-02", "sessions": [{"sport": "Rad", "session": "Grundlagen Z2", "duration": "1:30"}]}, {"date": "2027-02-03", "sessions": [{"sport": "Laufen", "session": "Z2", "duration": "1:00"}]}, {"date": "2027-02-04", "sessions": [{"sport": "Kraft", "session": "Ganzkörper", "duration": "0:45"}]}, {"date": "2027-02-05", "sessions": [{"sport": "Rad", "session": "Long Ride", "duration": "2:30"}]}, {"date": "2027-02-06", "sessions": [{"sport": "Laufen", "session": "Long Run", "duration": "1:30"}]}, {"date": "2027-02-07", "sessions": [{"sport": "Ruhetag", "session": "Mobility / Erholung", "duration": "0:30"}]}]}, {"w": 15, "start": "2027-02-08", "end": "2027-02-14", "type": "Umfang", "hours": 10, "days": [{"date": "2027-02-08", "sessions": [{"sport": "Schwimmen", "session": "Technik + Z2", "duration": "1:00"}]}, {"date": "2027-02-09", "sessions": [{"sport": "Rad", "session": "Grundlagen Z2", "duration": "1:30"}]}, {"date": "2027-02-10", "sessions": [{"sport": "Laufen", "session": "Z2", "duration": "1:00"}]}, {"date": "2027-02-11", "sessions": [{"sport": "Kraft", "session": "Ganzkörper", "duration": "0:45"}]}, {"date": "2027-02-12", "sessions": [{"sport": "Rad", "session": "Long Ride", "duration": "2:30"}]}, {"date": "2027-02-13", "sessions": [{"sport": "Laufen", "session": "Long Run", "duration": "1:30"}]}, {"date": "2027-02-14", "sessions": [{"sport": "Ruhetag", "session": "Mobility / Erholung", "duration": "0:30"}]}]}, {"w": 16, "start": "2027-02-15", "end": "2027-02-21", "type": "Recovery", "hours": 4.5, "days": [{"date": "2027-02-15", "sessions": [{"sport": "Schwimmen", "session": "Technik + Z2", "duration": "1:00"}]}, {"date": "2027-02-16", "sessions": [{"sport": "Rad", "session": "Grundlagen Z2", "duration": "1:30"}]}, {"date": "2027-02-17", "sessions": [{"sport": "Laufen", "session": "Z2", "duration": "1:00"}]}, {"date": "2027-02-18", "sessions": [{"sport": "Kraft", "session": "Ganzkörper", "duration": "0:45"}]}, {"date": "2027-02-19", "sessions": [{"sport": "Rad", "session": "Long Ride", "duration": "2:30"}]}, {"date": "2027-02-20", "sessions": [{"sport": "Laufen", "session": "Long Run", "duration": "1:30"}]}, {"date": "2027-02-21", "sessions": [{"sport": "Ruhetag", "session": "Mobility / Erholung", "duration": "0:30"}]}]}, {"w": 17, "start": "2027-02-22", "end": "2027-02-28", "type": "Umfang", "hours": 10, "days": [{"date": "2027-02-22", "sessions": [{"sport": "Schwimmen", "session": "Technik + Z2", "duration": "1:00"}]}, {"date": "2027-02-23", "sessions": [{"sport": "Rad", "session": "Grundlagen Z2", "duration": "1:30"}]}, {"date": "2027-02-24", "sessions": [{"sport": "Laufen", "session": "Z2", "duration": "1:00"}]}, {"date": "2027-02-25", "sessions": [{"sport": "Kraft", "session": "Ganzkörper", "duration": "0:45"}]}, {"date": "2027-02-26", "sessions": [{"sport": "Rad", "session": "Long Ride", "duration": "2:30"}]}, {"date": "2027-02-27", "sessions": [{"sport": "Laufen", "session": "Long Run", "duration": "1:30"}]}, {"date": "2027-02-28", "sessions": [{"sport": "Ruhetag", "session": "Mobility / Erholung", "duration": "0:30"}]}]}, {"w": 18, "start": "2027-03-01", "end": "2027-03-07", "type": "Umfang", "hours": 10, "days": [{"date": "2027-03-01", "sessions": [{"sport": "Schwimmen", "session": "Technik + Z2", "duration": "1:00"}]}, {"date": "2027-03-02", "sessions": [{"sport": "Rad", "session": "Grundlagen Z2", "duration": "1:30"}]}, {"date": "2027-03-03", "sessions": [{"sport": "Laufen", "session": "Z2", "duration": "1:00"}]}, {"date": "2027-03-04", "sessions": [{"sport": "Kraft", "session": "Ganzkörper", "duration": "0:45"}]}, {"date": "2027-03-05", "sessions": [{"sport": "Rad", "session": "Long Ride", "duration": "2:30"}]}, {"date": "2027-03-06", "sessions": [{"sport": "Laufen", "session": "Long Run", "duration": "1:30"}]}, {"date": "2027-03-07", "sessions": [{"sport": "Ruhetag", "session": "Mobility / Erholung", "duration": "0:30"}]}]}, {"w": 19, "start": "2027-03-08", "end": "2027-03-14", "type": "Umfang", "hours": 10, "days": [{"date": "2027-03-08", "sessions": [{"sport": "Schwimmen", "session": "Technik + Z2", "duration": "1:00"}]}, {"date": "2027-03-09", "sessions": [{"sport": "Rad", "session": "Grundlagen Z2", "duration": "1:30"}]}, {"date": "2027-03-10", "sessions": [{"sport": "Laufen", "session": "Z2", "duration": "1:00"}]}, {"date": "2027-03-11", "sessions": [{"sport": "Kraft", "session": "Ganzkörper", "duration": "0:45"}]}, {"date": "2027-03-12", "sessions": [{"sport": "Rad", "session": "Long Ride", "duration": "2:30"}]}, {"date": "2027-03-13", "sessions": [{"sport": "Laufen", "session": "Long Run", "duration": "1:30"}]}, {"date": "2027-03-14", "sessions": [{"sport": "Ruhetag", "session": "Mobility / Erholung", "duration": "0:30"}]}]}, {"w": 20, "start": "2027-03-15", "end": "2027-03-21", "type": "Recovery", "hours": 4.5, "days": [{"date": "2027-03-15", "sessions": [{"sport": "Schwimmen", "session": "Technik + Z2", "duration": "1:00"}]}, {"date": "2027-03-16", "sessions": [{"sport": "Rad", "session": "Grundlagen Z2", "duration": "1:30"}]}, {"date": "2027-03-17", "sessions": [{"sport": "Laufen", "session": "Z2", "duration": "1:00"}]}, {"date": "2027-03-18", "sessions": [{"sport": "Kraft", "session": "Ganzkörper", "duration": "0:45"}]}, {"date": "2027-03-19", "sessions": [{"sport": "Rad", "session": "Long Ride", "duration": "2:30"}]}, {"date": "2027-03-20", "sessions": [{"sport": "Laufen", "session": "Long Run", "duration": "1:30"}]}, {"date": "2027-03-21", "sessions": [{"sport": "Ruhetag", "session": "Mobility / Erholung", "duration": "0:30"}]}]}, {"w": 21, "start": "2027-03-22", "end": "2027-03-28", "type": "Aufbau", "hours": 11, "days": [{"date": "2027-03-22", "sessions": [{"sport": "Schwimmen", "session": "Technik + Z2", "duration": "1:00"}]}, {"date": "2027-03-23", "sessions": [{"sport": "Rad", "session": "Grundlagen Z2", "duration": "1:30"}]}, {"date": "2027-03-24", "sessions": [{"sport": "Laufen", "session": "Z2", "duration": "1:00"}]}, {"date": "2027-03-25", "sessions": [{"sport": "Kraft", "session": "Ganzkörper", "duration": "0:45"}]}, {"date": "2027-03-26", "sessions": [{"sport": "Rad", "session": "Long Ride", "duration": "2:30"}]}, {"date": "2027-03-27", "sessions": [{"sport": "Laufen", "session": "Long Run", "duration": "1:30"}]}, {"date": "2027-03-28", "sessions": [{"sport": "Ruhetag", "session": "Mobility / Erholung", "duration": "0:30"}]}]}, {"w": 22, "start": "2027-03-29", "end": "2027-04-04", "type": "Aufbau", "hours": 11, "days": [{"date": "2027-03-29", "sessions": [{"sport": "Schwimmen", "session": "Technik + Z2", "duration": "1:00"}]}, {"date": "2027-03-30", "sessions": [{"sport": "Rad", "session": "Grundlagen Z2", "duration": "1:30"}]}, {"date": "2027-03-31", "sessions": [{"sport": "Laufen", "session": "Z2", "duration": "1:00"}]}, {"date": "2027-04-01", "sessions": [{"sport": "Kraft", "session": "Ganzkörper", "duration": "0:45"}]}, {"date": "2027-04-02", "sessions": [{"sport": "Rad", "session": "Long Ride", "duration": "2:30"}]}, {"date": "2027-04-03", "sessions": [{"sport": "Laufen", "session": "Long Run", "duration": "1:30"}]}, {"date": "2027-04-04", "sessions": [{"sport": "Ruhetag", "session": "Mobility / Erholung", "duration": "0:30"}]}]}, {"w": 23, "start": "2027-04-05", "end": "2027-04-11", "type": "Aufbau", "hours": 11, "days": [{"date": "2027-04-05", "sessions": [{"sport": "Schwimmen", "session": "Technik + Z2", "duration": "1:00"}]}, {"date": "2027-04-06", "sessions": [{"sport": "Rad", "session": "Grundlagen Z2", "duration": "1:30"}]}, {"date": "2027-04-07", "sessions": [{"sport": "Laufen", "session": "Z2", "duration": "1:00"}]}, {"date": "2027-04-08", "sessions": [{"sport": "Kraft", "session": "Ganzkörper", "duration": "0:45"}]}, {"date": "2027-04-09", "sessions": [{"sport": "Rad", "session": "Long Ride", "duration": "2:30"}]}, {"date": "2027-04-10", "sessions": [{"sport": "Laufen", "session": "Long Run", "duration": "1:30"}]}, {"date": "2027-04-11", "sessions": [{"sport": "Ruhetag", "session": "Mobility / Erholung", "duration": "0:30"}]}]}, {"w": 24, "start": "2027-04-12", "end": "2027-04-18", "type": "Recovery", "hours": 5.0, "days": [{"date": "2027-04-12", "sessions": [{"sport": "Schwimmen", "session": "Technik + Z2", "duration": "1:00"}]}, {"date": "2027-04-13", "sessions": [{"sport": "Rad", "session": "Grundlagen Z2", "duration": "1:30"}]}, {"date": "2027-04-14", "sessions": [{"sport": "Laufen", "session": "Z2", "duration": "1:00"}]}, {"date": "2027-04-15", "sessions": [{"sport": "Kraft", "session": "Ganzkörper", "duration": "0:45"}]}, {"date": "2027-04-16", "sessions": [{"sport": "Rad", "session": "Long Ride", "duration": "2:30"}]}, {"date": "2027-04-17", "sessions": [{"sport": "Laufen", "session": "Long Run", "duration": "1:30"}]}, {"date": "2027-04-18", "sessions": [{"sport": "Ruhetag", "session": "Mobility / Erholung", "duration": "0:30"}]}]}, {"w": 25, "start": "2027-04-19", "end": "2027-04-25", "type": "Aufbau", "hours": 11, "days": [{"date": "2027-04-19", "sessions": [{"sport": "Schwimmen", "session": "Technik + Z2", "duration": "1:00"}]}, {"date": "2027-04-20", "sessions": [{"sport": "Rad", "session": "Grundlagen Z2", "duration": "1:30"}]}, {"date": "2027-04-21", "sessions": [{"sport": "Laufen", "session": "Z2", "duration": "1:00"}]}, {"date": "2027-04-22", "sessions": [{"sport": "Kraft", "session": "Ganzkörper", "duration": "0:45"}]}, {"date": "2027-04-23", "sessions": [{"sport": "Rad", "session": "Long Ride", "duration": "2:30"}]}, {"date": "2027-04-24", "sessions": [{"sport": "Laufen", "session": "Long Run", "duration": "1:30"}]}, {"date": "2027-04-25", "sessions": [{"sport": "Ruhetag", "session": "Mobility / Erholung", "duration": "0:30"}]}]}, {"w": 26, "start": "2027-04-26", "end": "2027-05-02", "type": "Aufbau", "hours": 11, "days": [{"date": "2027-04-26", "sessions": [{"sport": "Schwimmen", "session": "Technik + Z2", "duration": "1:00"}]}, {"date": "2027-04-27", "sessions": [{"sport": "Rad", "session": "Grundlagen Z2", "duration": "1:30"}]}, {"date": "2027-04-28", "sessions": [{"sport": "Laufen", "session": "Z2", "duration": "1:00"}]}, {"date": "2027-04-29", "sessions": [{"sport": "Kraft", "session": "Ganzkörper", "duration": "0:45"}]}, {"date": "2027-04-30", "sessions": [{"sport": "Rad", "session": "Long Ride", "duration": "2:30"}]}, {"date": "2027-05-01", "sessions": [{"sport": "Laufen", "session": "Long Run", "duration": "1:30"}]}, {"date": "2027-05-02", "sessions": [{"sport": "Ruhetag", "session": "Mobility / Erholung", "duration": "0:30"}]}]}, {"w": 27, "start": "2027-05-03", "end": "2027-05-09", "type": "Aufbau", "hours": 11, "days": [{"date": "2027-05-03", "sessions": [{"sport": "Schwimmen", "session": "Technik + Z2", "duration": "1:00"}]}, {"date": "2027-05-04", "sessions": [{"sport": "Rad", "session": "Grundlagen Z2", "duration": "1:30"}]}, {"date": "2027-05-05", "sessions": [{"sport": "Laufen", "session": "Z2", "duration": "1:00"}]}, {"date": "2027-05-06", "sessions": [{"sport": "Kraft", "session": "Ganzkörper", "duration": "0:45"}]}, {"date": "2027-05-07", "sessions": [{"sport": "Rad", "session": "Long Ride", "duration": "2:30"}]}, {"date": "2027-05-08", "sessions": [{"sport": "Laufen", "session": "Long Run", "duration": "1:30"}]}, {"date": "2027-05-09", "sessions": [{"sport": "Ruhetag", "session": "Mobility / Erholung", "duration": "0:30"}]}]}, {"w": 28, "start": "2027-05-10", "end": "2027-05-16", "type": "Recovery", "hours": 5.0, "days": [{"date": "2027-05-10", "sessions": [{"sport": "Schwimmen", "session": "Technik + Z2", "duration": "1:00"}]}, {"date": "2027-05-11", "sessions": [{"sport": "Rad", "session": "Grundlagen Z2", "duration": "1:30"}]}, {"date": "2027-05-12", "sessions": [{"sport": "Laufen", "session": "Z2", "duration": "1:00"}]}, {"date": "2027-05-13", "sessions": [{"sport": "Kraft", "session": "Ganzkörper", "duration": "0:45"}]}, {"date": "2027-05-14", "sessions": [{"sport": "Rad", "session": "Long Ride", "duration": "2:30"}]}, {"date": "2027-05-15", "sessions": [{"sport": "Laufen", "session": "Long Run", "duration": "1:30"}]}, {"date": "2027-05-16", "sessions": [{"sport": "Ruhetag", "session": "Mobility / Erholung", "duration": "0:30"}]}]}, {"w": 29, "start": "2027-05-17", "end": "2027-05-23", "type": "Aufbau", "hours": 11, "days": [{"date": "2027-05-17", "sessions": [{"sport": "Schwimmen", "session": "Technik + Z2", "duration": "1:00"}]}, {"date": "2027-05-18", "sessions": [{"sport": "Rad", "session": "Grundlagen Z2", "duration": "1:30"}]}, {"date": "2027-05-19", "sessions": [{"sport": "Laufen", "session": "Z2", "duration": "1:00"}]}, {"date": "2027-05-20", "sessions": [{"sport": "Kraft", "session": "Ganzkörper", "duration": "0:45"}]}, {"date": "2027-05-21", "sessions": [{"sport": "Rad", "session": "Long Ride", "duration": "2:30"}]}, {"date": "2027-05-22", "sessions": [{"sport": "Laufen", "session": "Long Run", "duration": "1:30"}]}, {"date": "2027-05-23", "sessions": [{"sport": "Ruhetag", "session": "Mobility / Erholung", "duration": "0:30"}]}]}, {"w": 30, "start": "2027-05-24", "end": "2027-05-30", "type": "Spezifität", "hours": 12, "days": [{"date": "2027-05-24", "sessions": [{"sport": "Schwimmen", "session": "Technik + Z2", "duration": "1:00"}]}, {"date": "2027-05-25", "sessions": [{"sport": "Rad", "session": "Grundlagen Z2", "duration": "1:30"}]}, {"date": "2027-05-26", "sessions": [{"sport": "Laufen", "session": "Z2", "duration": "1:00"}]}, {"date": "2027-05-27", "sessions": [{"sport": "Kraft", "session": "Ganzkörper", "duration": "0:45"}]}, {"date": "2027-05-28", "sessions": [{"sport": "Rad", "session": "Long Ride", "duration": "2:30"}]}, {"date": "2027-05-29", "sessions": [{"sport": "Laufen", "session": "Long Run", "duration": "1:30"}]}, {"date": "2027-05-30", "sessions": [{"sport": "Ruhetag", "session": "Mobility / Erholung", "duration": "0:30"}]}]}, {"w": 31, "start": "2027-05-31", "end": "2027-06-06", "type": "Spezifität", "hours": 12, "days": [{"date": "2027-05-31", "sessions": [{"sport": "Schwimmen", "session": "Technik + Z2", "duration": "1:00"}]}, {"date": "2027-06-01", "sessions": [{"sport": "Rad", "session": "Grundlagen Z2", "duration": "1:30"}]}, {"date": "2027-06-02", "sessions": [{"sport": "Laufen", "session": "Z2", "duration": "1:00"}]}, {"date": "2027-06-03", "sessions": [{"sport": "Kraft", "session": "Ganzkörper", "duration": "0:45"}]}, {"date": "2027-06-04", "sessions": [{"sport": "Rad", "session": "Long Ride", "duration": "2:30"}]}, {"date": "2027-06-05", "sessions": [{"sport": "Laufen", "session": "Long Run", "duration": "1:30"}]}, {"date": "2027-06-06", "sessions": [{"sport": "Ruhetag", "session": "Mobility / Erholung", "duration": "0:30"}]}]}, {"w": 32, "start": "2027-06-07", "end": "2027-06-13", "type": "Recovery", "hours": 5.4, "days": [{"date": "2027-06-07", "sessions": [{"sport": "Schwimmen", "session": "Technik + Z2", "duration": "1:00"}]}, {"date": "2027-06-08", "sessions": [{"sport": "Rad", "session": "Grundlagen Z2", "duration": "1:30"}]}, {"date": "2027-06-09", "sessions": [{"sport": "Laufen", "session": "Z2", "duration": "1:00"}]}, {"date": "2027-06-10", "sessions": [{"sport": "Kraft", "session": "Ganzkörper", "duration": "0:45"}]}, {"date": "2027-06-11", "sessions": [{"sport": "Rad", "session": "Long Ride", "duration": "2:30"}]}, {"date": "2027-06-12", "sessions": [{"sport": "Laufen", "session": "Long Run", "duration": "1:30"}]}, {"date": "2027-06-13", "sessions": [{"sport": "Ruhetag", "session": "Mobility / Erholung", "duration": "0:30"}]}]}, {"w": 33, "start": "2027-06-14", "end": "2027-06-20", "type": "Spezifität", "hours": 12, "days": [{"date": "2027-06-14", "sessions": [{"sport": "Schwimmen", "session": "Technik + Z2", "duration": "1:00"}]}, {"date": "2027-06-15", "sessions": [{"sport": "Rad", "session": "Grundlagen Z2", "duration": "1:30"}]}, {"date": "2027-06-16", "sessions": [{"sport": "Laufen", "session": "Z2", "duration": "1:00"}]}, {"date": "2027-06-17", "sessions": [{"sport": "Kraft", "session": "Ganzkörper", "duration": "0:45"}]}, {"date": "2027-06-18", "sessions": [{"sport": "Rad", "session": "Long Ride", "duration": "2:30"}]}, {"date": "2027-06-19", "sessions": [{"sport": "Laufen", "session": "Long Run", "duration": "1:30"}]}, {"date": "2027-06-20", "sessions": [{"sport": "Ruhetag", "session": "Mobility / Erholung", "duration": "0:30"}]}]}, {"w": 34, "start": "2027-06-21", "end": "2027-06-27", "type": "Spezifität", "hours": 12, "days": [{"date": "2027-06-21", "sessions": [{"sport": "Schwimmen", "session": "Technik + Z2", "duration": "1:00"}]}, {"date": "2027-06-22", "sessions": [{"sport": "Rad", "session": "Grundlagen Z2", "duration": "1:30"}]}, {"date": "2027-06-23", "sessions": [{"sport": "Laufen", "session": "Z2", "duration": "1:00"}]}, {"date": "2027-06-24", "sessions": [{"sport": "Kraft", "session": "Ganzkörper", "duration": "0:45"}]}, {"date": "2027-06-25", "sessions": [{"sport": "Rad", "session": "Long Ride", "duration": "2:30"}]}, {"date": "2027-06-26", "sessions": [{"sport": "Laufen", "session": "Long Run", "duration": "1:30"}]}, {"date": "2027-06-27", "sessions": [{"sport": "Ruhetag", "session": "Mobility / Erholung", "duration": "0:30"}]}]}, {"w": 35, "start": "2027-06-28", "end": "2027-07-04", "type": "Spezifität", "hours": 12, "days": [{"date": "2027-06-28", "sessions": [{"sport": "Schwimmen", "session": "Technik + Z2", "duration": "1:00"}]}, {"date": "2027-06-29", "sessions": [{"sport": "Rad", "session": "Grundlagen Z2", "duration": "1:30"}]}, {"date": "2027-06-30", "sessions": [{"sport": "Laufen", "session": "Z2", "duration": "1:00"}]}, {"date": "2027-07-01", "sessions": [{"sport": "Kraft", "session": "Ganzkörper", "duration": "0:45"}]}, {"date": "2027-07-02", "sessions": [{"sport": "Rad", "session": "Long Ride", "duration": "2:30"}]}, {"date": "2027-07-03", "sessions": [{"sport": "Laufen", "session": "Long Run", "duration": "1:30"}]}, {"date": "2027-07-04", "sessions": [{"sport": "Ruhetag", "session": "Mobility / Erholung", "duration": "0:30"}]}]}, {"w": 36, "start": "2027-07-05", "end": "2027-07-11", "type": "Recovery", "hours": 5.4, "days": [{"date": "2027-07-05", "sessions": [{"sport": "Schwimmen", "session": "Technik + Z2", "duration": "1:00"}]}, {"date": "2027-07-06", "sessions": [{"sport": "Rad", "session": "Grundlagen Z2", "duration": "1:30"}]}, {"date": "2027-07-07", "sessions": [{"sport": "Laufen", "session": "Z2", "duration": "1:00"}]}, {"date": "2027-07-08", "sessions": [{"sport": "Kraft", "session": "Ganzkörper", "duration": "0:45"}]}, {"date": "2027-07-09", "sessions": [{"sport": "Rad", "session": "Long Ride", "duration": "2:30"}]}, {"date": "2027-07-10", "sessions": [{"sport": "Laufen", "session": "Long Run", "duration": "1:30"}]}, {"date": "2027-07-11", "sessions": [{"sport": "Ruhetag", "session": "Mobility / Erholung", "duration": "0:30"}]}]}, {"w": 37, "start": "2027-07-12", "end": "2027-07-18", "type": "Spitze", "hours": 10, "days": [{"date": "2027-07-12", "sessions": [{"sport": "Schwimmen", "session": "Technik + Z2", "duration": "1:00"}]}, {"date": "2027-07-13", "sessions": [{"sport": "Rad", "session": "Grundlagen Z2", "duration": "1:30"}]}, {"date": "2027-07-14", "sessions": [{"sport": "Laufen", "session": "Z2", "duration": "1:00"}]}, {"date": "2027-07-15", "sessions": [{"sport": "Kraft", "session": "Ganzkörper", "duration": "0:45"}]}, {"date": "2027-07-16", "sessions": [{"sport": "Rad", "session": "Long Ride", "duration": "2:30"}]}, {"date": "2027-07-17", "sessions": [{"sport": "Laufen", "session": "Long Run", "duration": "1:30"}]}, {"date": "2027-07-18", "sessions": [{"sport": "Ruhetag", "session": "Mobility / Erholung", "duration": "0:30"}]}]}, {"w": 38, "start": "2027-07-19", "end": "2027-07-25", "type": "Taper", "hours": 6, "days": [{"date": "2027-07-19", "sessions": [{"sport": "Schwimmen", "session": "Technik + Z2", "duration": "1:00"}]}, {"date": "2027-07-20", "sessions": [{"sport": "Rad", "session": "Grundlagen Z2", "duration": "1:30"}]}, {"date": "2027-07-21", "sessions": [{"sport": "Laufen", "session": "Z2", "duration": "1:00"}]}, {"date": "2027-07-22", "sessions": [{"sport": "Kraft", "session": "Ganzkörper", "duration": "0:45"}]}, {"date": "2027-07-23", "sessions": [{"sport": "Rad", "session": "Long Ride", "duration": "2:30"}]}, {"date": "2027-07-24", "sessions": [{"sport": "Laufen", "session": "Long Run", "duration": "1:30"}]}, {"date": "2027-07-25", "sessions": [{"sport": "Ruhetag", "session": "Mobility / Erholung", "duration": "0:30"}]}]}, {"w": 39, "start": "2027-07-26", "end": "2027-08-01", "type": "Wettkampf", "hours": 4, "days": [{"date": "2027-07-26", "sessions": [{"sport": "Schwimmen", "session": "Technik + Z2", "duration": "1:00"}]}, {"date": "2027-07-27", "sessions": [{"sport": "Rad", "session": "Grundlagen Z2", "duration": "1:30"}]}, {"date": "2027-07-28", "sessions": [{"sport": "Laufen", "session": "Z2", "duration": "1:00"}]}, {"date": "2027-07-29", "sessions": [{"sport": "Kraft", "session": "Ganzkörper", "duration": "0:45"}]}, {"date": "2027-07-30", "sessions": [{"sport": "Rad", "session": "Long Ride", "duration": "2:30"}]}, {"date": "2027-07-31", "sessions": [{"sport": "Laufen", "session": "Long Run", "duration": "1:30"}]}, {"date": "2027-08-01", "sessions": [{"sport": "Ruhetag", "session": "Mobility / Erholung", "duration": "0:30"}]}]}];const seasonTypes={"Grundlagen": "Grundlagen", "Umfang": "Umfang", "Aufbau": "Harte Trainingswoche", "Spezifität": "Spezifität", "Spitze": "Harte Trainingswoche", "Taper": "Taper", "Recovery": "Recovery-Woche", "Wettkampf": "Wettkampfwoche"};const seasonColors={"Grundlagen": "#38bdf8", "Umfang": "#22c55e", "Aufbau": "#eab308", "Spezifität": "#f97316", "Spitze": "#ef4444", "Taper": "#a78bfa", "Recovery": "#64748b", "Wettkampf": "#ffffff"};const dayNames=["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"];let selectedWeek=1;
+function fmtDate(s){const d=new Date(s+'T00:00:00');return d.toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit'});}
+function durToHours(v){const p=String(v||'0:00').split(':').map(Number);return (p[0]||0)+(p[1]||0)/60;}
+function weekHours(x){return x.days.reduce((s,d)=>s+d.sessions.reduce((a,u)=>a+durToHours(u.duration),0),0);}
+function renderSeasonChart(){const el=document.getElementById('seasonChart');if(!el)return;const maxh=Math.max(12,...seasonData.map(x=>x.hours));const W=1180,H=440,L=58,R=20,T=30,B=64,cw=(W-L-R)/seasonData.length,ch=(H-T-B)/maxh;let s=`<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block">`;for(let h=0;h<=maxh;h+=2){const y=H-B-h*ch;s+=`<line x1="${L}" y1="${y}" x2="${W-R}" y2="${y}" stroke="#334155"/><text x="${L-10}" y="${y+4}" fill="#94a3b8" font-size="11" text-anchor="end">${h} h</text>`;}s+=`<line x1="${L}" y1="${T}" x2="${L}" y2="${H-B}" stroke="#64748b" stroke-width="1.5"/><line x1="${L}" y1="${H-B}" x2="${W-R}" y2="${H-B}" stroke="#64748b" stroke-width="1.5"/>`;seasonData.forEach((x,i)=>{const px=L+i*cw+cw*0.16,bw=cw*0.68,bh=x.hours*ch,py=H-B-bh,c=seasonColors[x.type]||'#38bdf8';s+=`<rect x="${px}" y="${py}" width="${bw}" height="${bh}" rx="3" fill="${c}" opacity="0.92"><title>W${x.w}: ${x.hours} h · ${seasonTypes[x.type]}</title></rect>`;s+=`<text x="${px+bw/2}" y="${Math.max(py-5,T+8)}" fill="#e2e8f0" font-size="9" text-anchor="middle">${x.hours}</text>`;s+=`<text x="${px+bw/2}" y="${H-B+16}" fill="#94a3b8" font-size="9" text-anchor="middle">${x.w}</text>`;});s+=`<text x="${(L+W-R)/2}" y="${H-10}" fill="#94a3b8" font-size="11" text-anchor="middle">Trainingswoche</text>`;s+=`<text x="14" y="${(T+H-B)/2}" fill="#94a3b8" font-size="11" text-anchor="middle" transform="rotate(-90 14 ${(T+H-B)/2})">Trainingsstunden pro Woche</text></svg>`;el.innerHTML=s;}
+function renderSeasonRows(){const tb=document.getElementById('seasonRows');if(!tb)return;tb.innerHTML=seasonData.map(x=>`<tr><td>W${String(x.w).padStart(2,'0')}</td><td>${fmtDate(x.start)}–${fmtDate(x.end)}</td><td><input type="number" min="0" max="40" step="0.5" value="${x.hours}" data-w="${x.w}" class="season-hours"></td><td><select data-w="${x.w}" class="season-type">${Object.entries(seasonTypes).map(([k,v])=>`<option value="${k}" ${x.type===k?'selected':''}>${v}</option>`).join('')}</select></td></tr>`).join('');tb.querySelectorAll('.season-hours').forEach(inp=>inp.addEventListener('input',e=>{const x=seasonData.find(z=>z.w==e.target.dataset.w);x.hours=Math.max(0,parseFloat(e.target.value)||0);renderSeasonChart();}));tb.querySelectorAll('.season-type').forEach(sel=>sel.addEventListener('change',e=>{const x=seasonData.find(z=>z.w==e.target.dataset.w);x.type=e.target.value;renderSeasonChart();}));}
+function renderCalendar(){const wrap=document.getElementById('calendarDays'),sel=document.getElementById('calWeek'),lab=document.getElementById('calWeekLabel');if(!wrap)return;sel.innerHTML=seasonData.map(x=>`<option value="${x.w}" ${x.w==selectedWeek?'selected':''}>W${String(x.w).padStart(2,'0')} · ${fmtDate(x.start)}–${fmtDate(x.end)}</option>`).join('');const x=seasonData.find(z=>z.w==selectedWeek);lab.textContent=`Wochentyp: ${seasonTypes[x.type]} · Geplante Stunden: ${x.hours} h`;wrap.innerHTML=x.days.map((d,di)=>`<div class="cal-day"><div class="cal-day-head"><b>${dayNames[di]}</b><span>${fmtDate(d.date)}</span><button class="season-toggle add-session" data-d="${di}">+ Trainingseinheit</button></div>${d.sessions.map((u,si)=>`<div class="cal-session"><select data-d="${di}" data-s="${si}" data-f="sport" class="cal-input">${['Schwimmen','Rad','Laufen','Kraft','Ruhetag','Regeneration'].map(v=>`<option ${u.sport===v?'selected':''}>${v}</option>`).join('')}</select><input data-d="${di}" data-s="${si}" data-f="session" class="cal-input" value="${u.session}" placeholder="Einheit / Plan"><input data-d="${di}" data-s="${si}" data-f="duration" class="cal-input" value="${u.duration}" placeholder="1:30"><button class="season-toggle del-session" data-d="${di}" data-s="${si}">×</button></div>`).join('')}</div>`).join('');wrap.querySelectorAll('.cal-input').forEach(el=>el.addEventListener('input',e=>{const di=+e.target.dataset.d,si=+e.target.dataset.s,f=e.target.dataset.f;x.days[di].sessions[si][f]=e.target.value;x.hours=Math.round(weekHours(x)*10)/10;document.querySelector(`.season-hours[data-w="${x.w}"]`).value=x.hours;renderSeasonChart();renderOverview();}));wrap.querySelectorAll('.add-session').forEach(b=>b.addEventListener('click',e=>{const di=+e.target.dataset.d;x.days[di].sessions.push({sport:'Rad',session:'Neue Einheit',duration:'1:00'});x.hours=Math.round(weekHours(x)*10)/10;document.querySelector(`.season-hours[data-w="${x.w}"]`).value=x.hours;renderCalendar();renderSeasonChart();renderOverview();}));wrap.querySelectorAll('.del-session').forEach(b=>b.addEventListener('click',e=>{const di=+e.target.dataset.d,si=+e.target.dataset.s;if(x.days[di].sessions.length>1){x.days[di].sessions.splice(si,1);}else{x.days[di].sessions[0]={sport:'Ruhetag',session:'Erholung',duration:'0:00'};}x.hours=Math.round(weekHours(x)*10)/10;document.querySelector(`.season-hours[data-w="${x.w}"]`).value=x.hours;renderCalendar();renderSeasonChart();renderOverview();}));}
+function renderOverview(){const tb=document.querySelector('#overview .grid.g2 .card:nth-child(2) tbody');if(!tb)return;const today=new Date();today.setHours(0,0,0,0);const current=seasonData.find(x=>{const a=new Date(x.start+'T00:00:00'),b=new Date(x.end+'T00:00:00');return today>=a&&today<=b;})||seasonData[0];tb.innerHTML=current.days.map(d=>d.sessions.map(u=>`<tr><td>${dayNames[new Date(d.date+'T00:00:00').getDay()-1<0?6:new Date(d.date+'T00:00:00').getDay()-1].slice(0,2)}</td><td>${u.sport} · ${u.session}</td><td>${u.sport==='Ruhetag'?'Erholung':'Training'}</td><td>${u.duration} h</td></tr>`).join('')).join('');}
+document.getElementById('calPrev').addEventListener('click',()=>{selectedWeek=Math.max(1,selectedWeek-1);renderCalendar();});
+document.getElementById('calNext').addEventListener('click',()=>{selectedWeek=Math.min(seasonData.length,selectedWeek+1);renderCalendar();});
+document.getElementById('calWeek').addEventListener('change',e=>{selectedWeek=parseInt(e.target.value);renderCalendar();});
+document.getElementById('toggleSeasonTable').addEventListener('click',function(){const w=document.getElementById('seasonTableWrap');const hidden=w.style.display==='none';w.style.display=hidden?'block':'none';this.textContent=hidden?'Tabelle & Bearbeitung ausblenden':'Tabelle & Bearbeitung einblenden';});
+document.getElementById('toggleSeasonCalendar').addEventListener('click',function(){const w=document.getElementById('seasonCalendarWrap');const hidden=w.style.display==='none';w.style.display=hidden?'block':'none';this.textContent=hidden?'Wochenkalender ausblenden':'Wochenkalender einblenden';});
+renderSeasonRows();renderSeasonChart();renderCalendar();renderOverview();
+</script>
+</section>
+
+<section id="training" class="sheet">
+<div class="filters">
+<select id="filterSport"><option>Alle Sportarten</option><option>Schwimmen</option><option>Rad</option><option>Laufen</option><option>Kraft</option></select>
+<select><option>Alle Varianten</option><option>Outdoor</option><option>Indoor</option><option>Sportplatz</option><option>Pool</option></select>
+<input type="date" value="2026-10-23"><input type="date" value="2026-10-29">
+<button id="openWorkoutModal" class="primary-btn">+ Abgeschlossene Trainingseinheit ergänzen</button>
+</div>
+<div id="workoutModal" class="modal-overlay">
+<div class="modal-light">
+<div class="modal-head"><h3>Neue abgeschlossene Trainingseinheit</h3><button id="closeWorkoutModal" class="modal-close">×</button></div>
+<div class="workout-form">
+<label>Datum<input type="date" id="wDate"></label>
+<label>Sportart<select id="wSport"><option>Schwimmen</option><option>Rad</option><option>Laufen</option><option>Kraft</option><option>Regeneration</option></select></label>
+<label>Variante<select id="wVariant"><option>Outdoor</option><option>Indoor</option><option>Pool</option><option>Sportplatz</option><option>Halle</option></select></label>
+<label>Trainingsart<input id="wType" placeholder="z. B. Sweet Spot 3×15"></label>
+<label>Dauer<input id="wDuration" placeholder="1:15"></label>
+<label>Distanz<input id="wDistance" placeholder="38 km"></label>
+<label>Pace<input id="wPace" placeholder="30,4 km/h"></label>
+<label>RPE<input id="wRpe" type="number" min="1" max="10" placeholder="7"></label>
+<label>Belastung<input id="wLoad" type="number" placeholder="525"></label>
+<label>Cardio Load<input id="wCardio" type="number" placeholder="112"></label>
+<label>Ø HF<input id="wHr" type="number" placeholder="148"></label>
+<label>Leistung<input id="wPower" placeholder="232 W"></label>
+</div>
+<h4 style="margin:16px 0 8px;color:#334155">Zonenverteilung in Minuten</h4>
+<div class="zone-form">
+<label>Z1 – Erholung<input type="number" min="0" id="wZ1" placeholder="0"></label>
+<label>Z2 – Grundlagen<input type="number" min="0" id="wZ2" placeholder="0"></label>
+<label>Z3 – Tempo<input type="number" min="0" id="wZ3" placeholder="0"></label>
+<label>Z4 – Schwelle<input type="number" min="0" id="wZ4" placeholder="0"></label>
+<label>Z5 – VO2max<input type="number" min="0" id="wZ5" placeholder="0"></label>
+</div>
+<div class="modal-actions"><button id="saveWorkout" class="modal-save">Trainingseinheit speichern</button><button id="cancelWorkout" class="modal-cancel">Abbrechen</button></div>
+</div>
+</div>
+<div class="card"><h3>Trainingsprotokoll</h3>
+<div class="scroll"><table>
+<thead><tr><th>Datum</th><th>Sportart</th><th>Variante</th><th>Trainingsart</th><th>Dauer</th><th>Distanz</th><th>Pace</th><th>RPE</th><th>Belastung</th><th>Cardio Load</th><th>Ø HF</th><th>Leistung</th><th>Z1</th><th>Z2</th><th>Z3</th><th>Z4</th><th>Z5</th><th></th></tr></thead>
+<tbody id="workoutRows"></tbody></table></div>
+<div class="note">Belastung = Dauer in Minuten × RPE. Gelöschte Einheiten können für 7 Sekunden über das Popup unten wiederhergestellt werden.</div>
+</div>
+<div id="undoToast" class="undo-toast"><span id="undoText">Trainingseinheit gelöscht</span><button id="undoButton">Wiederherstellen</button></div>
+<script>
+let workouts=[{"date": "2026-10-29", "sport": "Rad", "variant": "Indoor", "type": "Sweet Spot 3×15", "duration": "1:15", "distance": "38 km", "pace": "30,4 km/h", "rpe": 7, "load": 525, "cardio": 112, "hr": 148, "power": "232 W", "zones": [0, 32, 31, 12, 0]}, {"date": "2026-10-28", "sport": "Schwimmen", "variant": "Pool", "type": "Technik + Z2", "duration": "1:05", "distance": "2,0 km", "pace": "1:56 /100 m", "rpe": 5, "load": 325, "cardio": 78, "hr": 132, "power": "", "zones": [0, 48, 17, 0, 0]}, {"date": "2026-10-27", "sport": "Laufen", "variant": "Sportplatz", "type": "VO2max 6×3 min", "duration": "1:10", "distance": "12,8 km", "pace": "5:28 /km", "rpe": 8, "load": 560, "cardio": 126, "hr": 158, "power": "", "zones": [0, 28, 22, 18, 0]}, {"date": "2026-10-26", "sport": "Kraft", "variant": "Halle", "type": "Ganzkörper", "duration": "0:45", "distance": "", "pace": "", "rpe": 6, "load": 270, "cardio": 41, "hr": 118, "power": "", "zones": [0, 0, 0, 0, 0]}, {"date": "2026-10-25", "sport": "Rad", "variant": "Outdoor", "type": "Grundlagen Z2", "duration": "3:10", "distance": "92 km", "pace": "29,1 km/h", "rpe": 6, "load": 1140, "cardio": 214, "hr": 135, "power": "198 W", "zones": [22, 148, 20, 0, 0]}];let lastDeleted=null;let undoTimer=null;
+const modal=document.getElementById('workoutModal');
+function renderWorkouts(){
+ document.getElementById('workoutRows').innerHTML=workouts.map((w,i)=>`<tr><td>${new Date(w.date+'T00:00:00').toLocaleDateString('de-DE')}</td><td>${w.sport}</td><td>${w.variant}</td><td>${w.type||'–'}</td><td>${w.duration}</td><td>${w.distance||'–'}</td><td>${w.pace||'–'}</td><td>${w.rpe||'–'}</td><td>${w.load||'–'}</td><td>${w.cardio||'–'}</td><td>${w.hr||'–'}</td><td>${w.power||'–'}</td><td>${w.zones[0]}</td><td>${w.zones[1]}</td><td>${w.zones[2]}</td><td>${w.zones[3]}</td><td>${w.zones[4]}</td><td><button class="icon-btn edit-btn" data-i="${i}" title="Trainingseinheit bearbeiten">✏️</button><button class="trash-btn" data-i="${i}" title="Trainingseinheit löschen">🗑</button></td></tr>`).join('');
+ document.querySelectorAll('.trash-btn').forEach(b=>b.addEventListener('click',e=>{
+  const i=+e.currentTarget.dataset.i;lastDeleted={item:workouts[i],index:i};workouts.splice(i,1);renderWorkouts();renderZoneChart();
+  const toast=document.getElementById('undoToast');document.getElementById('undoText').textContent='Trainingseinheit gelöscht';toast.classList.add('show');
+  clearTimeout(undoTimer);undoTimer=setTimeout(()=>{toast.classList.remove('show');lastDeleted=null;},7000);
+ }));
+ document.querySelectorAll('.edit-btn').forEach(b=>b.addEventListener('click',e=>{
+  const i=+e.currentTarget.dataset.i;const w=workouts[i];
+  document.getElementById('wDate').value=w.date;document.getElementById('wSport').value=w.sport;document.getElementById('wVariant').value=w.variant;
+  document.getElementById('wType').value=w.type||'';document.getElementById('wDuration').value=w.duration;document.getElementById('wDistance').value=w.distance||'';
+  document.getElementById('wPace').value=w.pace||'';document.getElementById('wRpe').value=w.rpe||'';document.getElementById('wLoad').value=w.load||'';
+  document.getElementById('wCardio').value=w.cardio||'';document.getElementById('wHr').value=w.hr||'';document.getElementById('wPower').value=w.power||'';
+  w.zones.forEach((z,zi)=>document.getElementById('wZ'+(zi+1)).value=z||'');
+  modal.classList.add('open');modal.dataset.edit=i;
+ }));
+}
+document.getElementById('undoButton').addEventListener('click',()=>{
+ if(lastDeleted){workouts.splice(Math.min(lastDeleted.index,workouts.length),0,lastDeleted.item);lastDeleted=null;renderWorkouts();renderZoneChart();}
+ document.getElementById('undoToast').classList.remove('show');clearTimeout(undoTimer);
+});
+document.getElementById('openWorkoutModal').addEventListener('click',()=>{modal.classList.add('open');modal.dataset.edit='';document.getElementById('wDate').value=new Date().toISOString().slice(0,10);});
+document.getElementById('closeWorkoutModal').addEventListener('click',()=>modal.classList.remove('open'));
+document.getElementById('cancelWorkout').addEventListener('click',()=>modal.classList.remove('open'));
+modal.addEventListener('click',e=>{if(e.target===modal)modal.classList.remove('open');});
+document.getElementById('saveWorkout').addEventListener('click',()=>{
+ const g=id=>document.getElementById(id).value.trim();
+ const date=g('wDate'); if(!date){alert('Bitte Datum angeben.');return;}
+ const dur=g('wDuration')||'0:00'; const p=dur.split(':').map(Number);
+ const rpe=parseFloat(g('wRpe'))||0; const load=g('wLoad')||Math.round((p[0]*60+(p[1]||0))*rpe);
+ const zones=[1,2,3,4,5].map(i=>Math.max(0,parseInt(g('wZ'+i))||0));
+ const entry={date,sport:g('wSport'),variant:g('wVariant'),type:g('wType'),duration:dur,distance:g('wDistance'),pace:g('wPace'),rpe:g('wRpe'),load,cardio:g('wCardio'),hr:g('wHr'),power:g('wPower'),zones};
+ const edit=modal.dataset.edit;
+ if(edit!==''){workouts[+edit]=entry;}else{workouts.unshift(entry);}
+ renderWorkouts();renderZoneChart();
+ ['wType','wDuration','wDistance','wPace','wRpe','wLoad','wCardio','wHr','wPower','wZ1','wZ2','wZ3','wZ4','wZ5'].forEach(id=>document.getElementById(id).value='');
+ modal.classList.remove('open');modal.dataset.edit='';
+});
+renderWorkouts();
+</script>
+</section>
+
+<section id="recovery" class="sheet">
+<div class="recovery-actions">
+<button id="openFitbitModal" class="primary-btn">+ Fitbit-Daten ergänzen</button>
+<button id="openSubjectiveModal" class="primary-btn">+ Subjektives Empfinden ergänzen</button>
+<button id="openOrthoModal" class="primary-btn">+ Orthostatischen Test ergänzen</button>
+<button id="toggleRecent" class="primary-btn secondary-toggle">Nur letzte 7 Einträge anzeigen</button>
+</div>
+<div id="fitbitModal" class="modal-overlay">
+<div class="modal-light">
+<div class="modal-head"><h3>Fitbit-Daten vom Tag</h3><button class="modal-close" data-close="fitbitModal">×</button></div>
+<div class="workout-form">
+<label>Datum<input type="date" id="fDate"></label>
+<label>Fitbit Recovery<input type="number" min="0" max="100" id="fFitbit" placeholder="78"></label>
+<label>Schlafscore<input type="number" min="0" max="100" id="fSleepScore" placeholder="84"></label>
+<label>Schlaf<input id="fSleep" placeholder="7:25"></label>
+<label>Schlaf-HF<input type="number" id="fSleepHr" placeholder="54"></label>
+<label>Ruhepuls<input type="number" id="fRhr" placeholder="52"></label>
+<label>HRV<input type="number" id="fHrv" placeholder="62"></label>
+</div>
+<div class="modal-actions"><button id="saveFitbit" class="modal-save">Fitbit-Daten speichern</button><button class="modal-cancel" data-close="fitbitModal">Abbrechen</button></div>
+</div>
+</div>
+<div id="subjectiveModal" class="modal-overlay">
+<div class="modal-light">
+<div class="modal-head"><h3>Subjektives Empfinden vom Tag</h3><button class="modal-close" data-close="subjectiveModal">×</button></div>
+<div class="workout-form">
+<label>Datum<input type="date" id="sDate"></label>
+<label>Schlafqualität<input type="number" min="1" max="5" id="sSleepQ" placeholder="2"></label>
+<label>Müdigkeit<input type="number" min="1" max="5" id="sFatigue" placeholder="2"></label>
+<label>Muskeln<input type="number" min="1" max="5" id="sMuscle" placeholder="3"></label>
+<label>Stress<input type="number" min="1" max="5" id="sStress" placeholder="2"></label>
+<label>Krankheit<input type="number" min="1" max="5" id="sIllness" placeholder="1"></label>
+</div>
+<div class="modal-actions"><button id="saveSubjective" class="modal-save">Subjektives Empfinden speichern</button><button class="modal-cancel" data-close="subjectiveModal">Abbrechen</button></div>
+</div>
+</div>
+<div id="orthoModal" class="modal-overlay">
+<div class="modal-light">
+<div class="modal-head"><h3>Orthostatischer Test</h3><button class="modal-close" data-close="orthoModal">×</button></div>
+<div class="workout-form">
+<label>Datum<input type="date" id="oDate"></label>
+<label>HF Liegen<input type="number" id="oHrLiegen" placeholder="52"></label>
+<label>HRV Liegen<input type="number" id="oHrvLiegen" placeholder="62"></label>
+<label>HF Spitze<input type="number" id="oHrSpitze" placeholder="74"></label>
+<label>HF Stehen<input type="number" id="oHrStehen" placeholder="68"></label>
+<label>HRV Stehen<input type="number" id="oHrvStehen" placeholder="48"></label>
+<label>Polar Bewertung<select id="oPolar"><option>Erholt</option><option>Nicht erholt</option></select></label>
+</div>
+<div class="modal-actions"><button id="saveOrtho" class="modal-save">Test speichern</button><button class="modal-cancel" data-close="orthoModal">Abbrechen</button></div>
+</div>
+</div>
+<div class="card"><h3>Recovery-Liste · Fitbit-Daten</h3>
+<div class="scroll"><table>
+<thead><tr><th>Datum</th><th>Fitbit Recovery</th><th>Schlafscore</th><th>Schlaf</th><th>Schlaf-HF</th><th>Ruhepuls</th><th>HRV</th><th></th></tr></thead>
+<tbody id="fitbitRows"></tbody></table></div>
+<div class="note">Alle Tabellen sind automatisch nach Datum sortiert – oben steht das aktuellste Datum. Gelöschte Fitbit-Daten können 5 Sekunden lang wiederhergestellt werden.</div>
+</div>
+<div class="card" style="margin-top:14px"><h3>Subjektives Empfinden</h3>
+<div class="scroll"><table>
+<thead><tr><th>Datum</th><th>Schlafqualität</th><th>Müdigkeit</th><th>Muskeln</th><th>Stress</th><th>Krankheit</th><th>Subjective Ø</th><th></th></tr></thead>
+<tbody id="subjectiveRows"></tbody></table></div>
+<div class="note">Skala: 1 = gut, 5 = schlecht. Gelöschte Einträge können 7 Sekunden lang wiederhergestellt werden.</div>
+</div>
+<div class="card" style="margin-top:14px"><h3>Orthostatischer Test</h3>
+<div class="scroll"><table>
+<thead><tr><th>Datum</th><th>HF Liegen</th><th>HRV Liegen</th><th>HF Spitze</th><th>HF Stehen</th><th>HRV Stehen</th><th>Polar Bewertung</th><th></th></tr></thead>
+<tbody id="orthoRows"></tbody></table></div>
+<div class="note">Unter jedem Wert steht der persönliche 28-Tage-Bereich. Nur der einzelne Messwert außerhalb der Baseline wird rot markiert. Gelöschte Tests können 7 Sekunden lang wiederhergestellt werden.</div>
+</div>
+<div id="fitbitUndoToast" class="undo-toast"><span>Fitbit-Daten gelöscht</span><button id="fitbitUndoButton">Rückgängig machen</button></div>
+<div id="subjectiveUndoToast" class="undo-toast"><span>Subjektiver Eintrag gelöscht</span><button id="subjectiveUndoButton">Rückgängig machen</button></div>
+<div id="orthoUndoToast" class="undo-toast"><span>Orthostatischer Test gelöscht</span><button id="orthoUndoButton">Rückgängig machen</button></div>
+<script>
+let fitbitData=[{"date": "2026-10-29", "fitbit": 78, "sleepscore": 84, "sleep": "7:25", "sleephr": 54, "rhr": 52, "hrv": 62}, {"date": "2026-10-28", "fitbit": 71, "sleepscore": 79, "sleep": "6:50", "sleephr": 56, "rhr": 53, "hrv": 58}, {"date": "2026-10-27", "fitbit": 65, "sleepscore": 74, "sleep": "6:20", "sleephr": 58, "rhr": 54, "hrv": 52}, {"date": "2026-10-26", "fitbit": 82, "sleepscore": 88, "sleep": "8:05", "sleephr": 53, "rhr": 51, "hrv": 66}];
+let subjectiveData=[{"date": "2026-10-29", "sleepq": 2, "fatigue": 2, "muscle": 3, "stress": 2, "illness": 1, "subjective": 2.0}, {"date": "2026-10-28", "sleepq": 3, "fatigue": 3, "muscle": 3, "stress": 3, "illness": 1, "subjective": 2.6}, {"date": "2026-10-27", "sleepq": 3, "fatigue": 4, "muscle": 4, "stress": 3, "illness": 1, "subjective": 3.0}, {"date": "2026-10-26", "sleepq": 1, "fatigue": 2, "muscle": 2, "stress": 1, "illness": 1, "subjective": 1.4}];
+let orthoTests=[{"date": "2026-10-29", "hrLiegen": 52, "hrvLiegen": 62, "hrSpitze": 74, "hrStehen": 68, "hrvStehen": 48, "polar": "Erholt"}, {"date": "2026-10-28", "hrLiegen": 53, "hrvLiegen": 58, "hrSpitze": 76, "hrStehen": 69, "hrvStehen": 46, "polar": "Nicht erholt"}, {"date": "2026-10-27", "hrLiegen": 54, "hrvLiegen": 52, "hrSpitze": 78, "hrStehen": 71, "hrvStehen": 44, "polar": "Nicht erholt"}, {"date": "2026-10-26", "hrLiegen": 51, "hrvLiegen": 66, "hrSpitze": 72, "hrStehen": 66, "hrvStehen": 50, "polar": "Erholt"}, {"date": "2026-10-25", "hrLiegen": 52, "hrvLiegen": 61, "hrSpitze": 73, "hrStehen": 67, "hrvStehen": 47, "polar": "Erholt"}];
+let lastDeletedFitbit=null,lastDeletedSubjective=null,lastDeletedOrtho=null;
+let fitbitUndoTimer=null,subjectiveUndoTimer=null,orthoUndoTimer=null;
+let showRecentOnly=false;
+const fModal=document.getElementById('fitbitModal'),sModal=document.getElementById('subjectiveModal'),oModal=document.getElementById('orthoModal');
+function orthoBadge(v){const c=v==='Erholt'?'ok':'bad';return `<span class="badge ${c}">${v}</span>`;}
+function showUndo(toastId,timerKey){const toast=document.getElementById(toastId);toast.classList.add('show');clearTimeout(window[timerKey]);window[timerKey]=setTimeout(()=>{toast.classList.remove('show');if(timerKey==='fitbitUndoTimer')lastDeletedFitbit=null;if(timerKey==='subjectiveUndoTimer')lastDeletedSubjective=null;if(timerKey==='orthoUndoTimer')lastDeletedOrtho=null;},7000);}
+function sortByDate(arr){return [...arr].sort((a,b)=>new Date(b.date)-new Date(a.date));}
+function renderRecoveries(){
+ const fb=sortByDate(fitbitData),sb=sortByDate(subjectiveData);
+ const fbShow=showRecentOnly?fb.slice(0,7):fb, sbShow=showRecentOnly?sb.slice(0,7):sb;
+ document.getElementById('fitbitRows').innerHTML=fbShow.map(r=>{const i=fitbitData.indexOf(r);return `<tr><td>${new Date(r.date+'T00:00:00').toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit'})}</td><td>${r.fitbit}</td><td>${r.sleepscore}</td><td>${r.sleep}</td><td>${r.sleephr}</td><td>${r.rhr}</td><td>${r.hrv} ms</td><td><button class="icon-btn edit-fitbit" data-i="${i}" title="Fitbit-Daten bearbeiten">✏️</button><button class="trash-btn fitbit-trash" data-i="${i}" title="Fitbit-Daten löschen">🗑</button></td></tr>`;}).join('');
+ document.getElementById('subjectiveRows').innerHTML=sbShow.map(r=>{const i=subjectiveData.indexOf(r);return `<tr><td>${new Date(r.date+'T00:00:00').toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit'})}</td><td>${r.sleepq}</td><td>${r.fatigue}</td><td>${r.muscle}</td><td>${r.stress}</td><td>${r.illness}</td><td>${r.subjective}</td><td><button class="icon-btn edit-subjective" data-i="${i}" title="Subjektives Empfinden bearbeiten">✏️</button><button class="trash-btn subjective-trash" data-i="${i}" title="Subjektiven Eintrag löschen">🗑</button></td></tr>`;}).join('');
+ document.querySelectorAll('.fitbit-trash').forEach(b=>b.addEventListener('click',e=>{
+  const i=+e.currentTarget.dataset.i;lastDeletedFitbit={item:fitbitData[i],index:i};fitbitData.splice(i,1);renderRecoveries();
+  showUndo('fitbitUndoToast','fitbitUndoTimer');
+ }));
+ document.querySelectorAll('.edit-fitbit').forEach(b=>b.addEventListener('click',e=>{
+  const i=+e.currentTarget.dataset.i;const r=fitbitData[i];
+  document.getElementById('fDate').value=r.date;document.getElementById('fFitbit').value=r.fitbit;document.getElementById('fSleepScore').value=r.sleepscore;
+  document.getElementById('fSleep').value=r.sleep;document.getElementById('fSleepHr').value=r.sleephr;document.getElementById('fRhr').value=r.rhr;document.getElementById('fHrv').value=r.hrv;
+  fModal.classList.add('open');fModal.dataset.edit=i;
+ }));
+ document.querySelectorAll('.edit-subjective').forEach(b=>b.addEventListener('click',e=>{
+  const i=+e.currentTarget.dataset.i;const r=subjectiveData[i];
+  document.getElementById('sDate').value=r.date;document.getElementById('sSleepQ').value=r.sleepq;document.getElementById('sFatigue').value=r.fatigue;
+  document.getElementById('sMuscle').value=r.muscle;document.getElementById('sStress').value=r.stress;document.getElementById('sIllness').value=r.illness;
+  sModal.classList.add('open');sModal.dataset.edit=i;
+ }));
+ document.querySelectorAll('.subjective-trash').forEach(b=>b.addEventListener('click',e=>{
+  const i=+e.currentTarget.dataset.i;lastDeletedSubjective={item:subjectiveData[i],index:i};subjectiveData.splice(i,1);renderRecoveries();
+  showUndo('subjectiveUndoToast','subjectiveUndoTimer');
+ }));
+}
+document.getElementById('fitbitUndoButton').addEventListener('click',()=>{
+ if(lastDeletedFitbit){fitbitData.splice(Math.min(lastDeletedFitbit.index,fitbitData.length),0,lastDeletedFitbit.item);lastDeletedFitbit=null;renderRecoveries();}
+ document.getElementById('fitbitUndoToast').classList.remove('show');clearTimeout(fitbitUndoTimer);
+});
+document.getElementById('subjectiveUndoButton').addEventListener('click',()=>{
+ if(lastDeletedSubjective){subjectiveData.splice(Math.min(lastDeletedSubjective.index,subjectiveData.length),0,lastDeletedSubjective.item);lastDeletedSubjective=null;renderRecoveries();}
+ document.getElementById('subjectiveUndoToast').classList.remove('show');clearTimeout(subjectiveUndoTimer);
+});
+document.getElementById('orthoUndoButton').addEventListener('click',()=>{
+ if(lastDeletedOrtho){orthoTests.splice(Math.min(lastDeletedOrtho.index,orthoTests.length),0,lastDeletedOrtho.item);lastDeletedOrtho=null;renderOrtho();}
+ document.getElementById('orthoUndoToast').classList.remove('show');clearTimeout(orthoUndoTimer);
+});
+function baselineFor(test,key){
+ const t=new Date(test.date+'T00:00:00');
+ const prior=orthoTests.filter(x=>{const d=new Date(x.date+'T00:00:00');const diff=(t-d)/86400000;return diff>0&&diff<=28;}).map(x=>x[key]);
+ const vals=prior.length>=4?prior:orthoTests.filter(x=>x.date!==test.date).map(x=>x[key]);
+ if(!vals.length)return null;
+ const mean=vals.reduce((a,b)=>a+b,0)/vals.length;
+ const sd=Math.sqrt(vals.reduce((a,b)=>a+(b-mean)**2,0)/vals.length);
+ return {low:mean-sd,high:mean+sd};
+}
+function metricCell(test,key,unit){
+ const v=test[key];const b=baselineFor(test,key);
+ if(!b)return `<td><span class="ortho-val">${v} ${unit}</span></td>`;
+ const out=v<b.low||v>b.high;
+ return `<td><span class="ortho-val ${out?'ortho-out':'ortho-in'}">${v} ${unit}</span><div class="ortho-base">${b.low.toFixed(1)}–${b.high.toFixed(1)}</div></td>`;
+}
+function renderOrtho(){
+ const ot=sortByDate(orthoTests);const show=showRecentOnly?ot.slice(0,7):ot;
+ document.getElementById('orthoRows').innerHTML=show.map(t=>{const i=orthoTests.indexOf(t);
+  const outCount=['hrLiegen','hrvLiegen','hrSpitze','hrStehen','hrvStehen'].filter(k=>{const b=baselineFor(t,k);return b&&(t[k]<b.low||t[k]>b.high);}).length;
+  const status=outCount===0?'Erholt':'Nicht erholt';
+  return `<tr><td>${new Date(t.date+'T00:00:00').toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit'})}</td>${metricCell(t,'hrLiegen','bpm')}${metricCell(t,'hrvLiegen','ms')}${metricCell(t,'hrSpitze','bpm')}${metricCell(t,'hrStehen','bpm')}${metricCell(t,'hrvStehen','ms')}<td>${orthoBadge(t.polar||status)}</td><td><button class="icon-btn edit-ortho" data-i="${i}" title="Orthostatischen Test bearbeiten">✏️</button><button class="trash-btn ortho-trash" data-i="${i}" title="Orthostatischen Test löschen">🗑</button></td></tr>`;}).join('');
+ document.querySelectorAll('.ortho-trash').forEach(b=>b.addEventListener('click',e=>{
+  const i=+e.currentTarget.dataset.i;lastDeletedOrtho={item:orthoTests[i],index:i};orthoTests.splice(i,1);renderOrtho();
+  showUndo('orthoUndoToast','orthoUndoTimer');
+ }));
+ document.querySelectorAll('.edit-ortho').forEach(b=>b.addEventListener('click',e=>{
+  const i=+e.currentTarget.dataset.i;const t=orthoTests[i];
+  document.getElementById('oDate').value=t.date;document.getElementById('oHrLiegen').value=t.hrLiegen;document.getElementById('oHrvLiegen').value=t.hrvLiegen;
+  document.getElementById('oHrSpitze').value=t.hrSpitze;document.getElementById('oHrStehen').value=t.hrStehen;document.getElementById('oHrvStehen').value=t.hrvStehen;
+  document.getElementById('oPolar').value=t.polar||'Erholt';
+  oModal.classList.add('open');oModal.dataset.edit=i;
+ }));
+}
+document.getElementById('toggleRecent').addEventListener('click',function(){
+ showRecentOnly=!showRecentOnly;
+ this.textContent=showRecentOnly?'Alle Einträge anzeigen':'Nur letzte 7 Einträge anzeigen';
+ renderRecoveries();renderOrtho();
+});
+function openModal(m){m.classList.add('open');}
+function closeModal(m){m.classList.remove('open');m.dataset.edit='';}
+document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>closeModal(document.getElementById(b.dataset.close))));
+document.querySelectorAll('.modal-overlay').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)closeModal(m);}));
+document.getElementById('openFitbitModal').addEventListener('click',()=>{fModal.dataset.edit='';document.getElementById('fDate').value=new Date().toISOString().slice(0,10);openModal(fModal);});
+document.getElementById('openSubjectiveModal').addEventListener('click',()=>{sModal.dataset.edit='';document.getElementById('sDate').value=new Date().toISOString().slice(0,10);openModal(sModal);});
+document.getElementById('openOrthoModal').addEventListener('click',()=>{oModal.dataset.edit='';document.getElementById('oDate').value=new Date().toISOString().slice(0,10);openModal(oModal);});
+document.getElementById('saveFitbit').addEventListener('click',()=>{
+ const g=id=>document.getElementById(id).value.trim();
+ const date=g('fDate'); if(!date){alert('Bitte Datum angeben.');return;}
+ const entry={date,fitbit:g('fFitbit')||'–',sleepscore:g('fSleepScore')||'–',sleep:g('fSleep')||'–',sleephr:g('fSleepHr')||'–',rhr:g('fRhr')||'–',hrv:g('fHrv')||'–'};
+ const edit=fModal.dataset.edit;
+ if(edit!==''){fitbitData[+edit]=entry;}else{const i=fitbitData.findIndex(x=>x.date===date);if(i>=0)fitbitData[i]=entry;else fitbitData.unshift(entry);}
+ renderRecoveries();closeModal(fModal);
+});
+document.getElementById('saveSubjective').addEventListener('click',()=>{
+ const g=id=>document.getElementById(id).value.trim();
+ const date=g('sDate'); if(!date){alert('Bitte Datum angeben.');return;}
+ const vals=[g('sSleepQ'),g('sFatigue'),g('sMuscle'),g('sStress')].map(v=>parseFloat(v)||0);
+ const subjective=Math.round(((vals.reduce((a,b)=>a+b,0)+(parseFloat(g('sIllness'))||0))/5)*10)/10;
+ const entry={date,sleepq:g('sSleepQ')||'–',fatigue:g('sFatigue')||'–',muscle:g('sMuscle')||'–',stress:g('sStress')||'–',illness:g('sIllness')||'–',subjective};
+ const edit=sModal.dataset.edit;
+ if(edit!==''){subjectiveData[+edit]=entry;}else{const i=subjectiveData.findIndex(x=>x.date===date);if(i>=0)subjectiveData[i]=entry;else subjectiveData.unshift(entry);}
+ renderRecoveries();closeModal(sModal);
+});
+document.getElementById('saveOrtho').addEventListener('click',()=>{
+ const g=id=>document.getElementById(id).value.trim();
+ const date=g('oDate'); if(!date){alert('Bitte Datum angeben.');return;}
+ const entry={date,hrLiegen:+g('oHrLiegen')||0,hrvLiegen:+g('oHrvLiegen')||0,hrSpitze:+g('oHrSpitze')||0,hrStehen:+g('oHrStehen')||0,hrvStehen:+g('oHrvStehen')||0,polar:g('oPolar')};
+ const edit=oModal.dataset.edit;
+ if(edit!==''){orthoTests[+edit]=entry;}else{const i=orthoTests.findIndex(x=>x.date===date);if(i>=0)orthoTests[i]=entry;else orthoTests.unshift(entry);}
+ renderOrtho();closeModal(oModal);
+});
+renderRecoveries();renderOrtho();
+</script>
+</section>
+<nav class="mobile-nav">
+<button class="active" data-sheet="overview"><span class="icon">📊</span>Überblick</button>
+<button data-sheet="season"><span class="icon">📅</span>Saison</button>
+<button data-sheet="training"><span class="icon">🏃</span>Training</button>
+<button data-sheet="recovery"><span class="icon">💤</span>Recovery</button>
+</nav></main>
+
+<script>
+document.querySelectorAll('nav button').forEach(b=>b.addEventListener('click',()=>{
+document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));
+document.querySelectorAll('.sheet').forEach(x=>x.classList.remove('active'));
+b.classList.add('active');document.getElementById(b.dataset.sheet).classList.add('active');
+}));
+</script>
+
+<script>
+const zoneColors=['#64748b','#38bdf8','#22c55e','#eab308','#ef4444'];
+const zoneNames=['Z1 Erholung','Z2 Grundlagen','Z3 Tempo','Z4 Schwelle','Z5 VO2max'];
+function monthZones(m){const z=[0,0,0,0,0];workouts.filter(w=>w.date.slice(0,7)===m).forEach(w=>w.zones.forEach((v,i)=>z[i]+=v||0));return z;}
+function renderZoneChart(){
+ const sel=document.getElementById('zoneMonth'),el=document.getElementById('zoneChart'),det=document.getElementById('zoneDetails');
+ const months=[...new Set(workouts.map(w=>w.date.slice(0,7)))].sort();
+ if(!months.length){el.innerHTML='<div class="note">Noch keine Zonendaten vorhanden.</div>';det.innerHTML='';return;}
+ if(sel.options.length!==months.length){sel.innerHTML=months.map(m=>`<option value="${m}">${new Date(m+'-01T00:00:00').toLocaleDateString('de-DE',{month:'long',year:'numeric'})}</option>`).join('');}
+ if(!months.includes(sel.value))sel.value=months[months.length-1];
+ const z=monthZones(sel.value);const total=z.reduce((a,b)=>a+b,0);
+ if(!total){el.innerHTML='<div class="note">Für diesen Monat sind noch keine Zonenminuten erfasst.</div>';det.innerHTML='';return;}
+ const cx=150,cy=150,r=110,inner=58;let a0=-Math.PI/2,s=`<svg viewBox="0 0 300 300" style="width:100%;max-width:320px;display:block;margin:auto">`;
+ z.forEach((v,i)=>{if(!v)return;const a1=a0+v/total*2*Math.PI;const large=v/total>0.5?1:0;
+ const x0=cx+r*Math.cos(a0),y0=cy+r*Math.sin(a0),x1=cx+r*Math.cos(a1),y1=cy+r*Math.sin(a1),xi1=cx+inner*Math.cos(a1),yi1=cy+inner*Math.sin(a1),xi0=cx+inner*Math.cos(a0),yi0=cy+inner*Math.sin(a0);
+ s+=`<path d="M ${x0} ${y0} A ${r} ${r} 0 ${large} 1 ${x1} ${y1} L ${xi1} ${yi1} A ${inner} ${inner} 0 ${large} 0 ${xi0} ${yi0} Z" fill="${zoneColors[i]}" opacity="0.92"><title>${zoneNames[i]}: ${v} min · ${(v/total*100).toFixed(1)} %</title></path>`;
+ const mid=(a0+a1)/2,lr=(r+inner)/2;s+=`<text x="${cx+lr*Math.cos(mid)}" y="${cy+lr*Math.sin(mid)+4}" fill="#fff" font-size="11" font-weight="700" text-anchor="middle">${(v/total*100).toFixed(0)}%</text>`;a0=a1;});
+ s+=`<text x="${cx}" y="${cy-4}" fill="#e2e8f0" font-size="16" font-weight="800" text-anchor="middle">${total}</text><text x="${cx}" y="${cy+14}" fill="#94a3b8" font-size="11" text-anchor="middle">Minuten</text></svg>`;
+ el.innerHTML=s;det.innerHTML=z.map((v,i)=>v?`<span><span class="dot" style="background:${zoneColors[i]}"></span>${zoneNames[i]}: ${v} min · ${(v/total*100).toFixed(1)} %</span>`:'').join('');
+}
+document.getElementById('zoneMonth').addEventListener('change',renderZoneChart);
+renderZoneChart();
+</script><script>
+const STORAGE_KEY='triathlonDashboardStateV1';
+function saveDashboardState(){
+ try{localStorage.setItem(STORAGE_KEY,JSON.stringify({seasonData,workouts,fitbitData,subjectiveData,orthoTests}));}catch(e){console.warn('Speichern fehlgeschlagen',e);}
+}
+function loadDashboardState(){
+ try{
+  const raw=localStorage.getItem(STORAGE_KEY);if(!raw)return;
+  const s=JSON.parse(raw);
+  if(Array.isArray(s.seasonData))seasonData.splice(0,seasonData.length,...s.seasonData);
+  if(Array.isArray(s.workouts))workouts.splice(0,workouts.length,...s.workouts);
+  if(Array.isArray(s.fitbitData))fitbitData.splice(0,fitbitData.length,...s.fitbitData);
+  if(Array.isArray(s.subjectiveData))subjectiveData.splice(0,subjectiveData.length,...s.subjectiveData);
+  if(Array.isArray(s.orthoTests))orthoTests.splice(0,orthoTests.length,...s.orthoTests);
+ }catch(e){console.warn('Laden fehlgeschlagen',e);}
+}
+document.addEventListener('input',saveDashboardState);
+document.addEventListener('change',saveDashboardState);
+document.addEventListener('click',e=>{
+ if(e.target.closest('.trash-btn,.add-session,.del-session,#saveWorkout,#saveFitbit,#saveSubjective,#saveOrtho,#undoButton,#fitbitUndoButton,#subjectiveUndoButton,#orthoUndoButton'))setTimeout(saveDashboardState,50);
+});
+window.addEventListener('beforeunload',saveDashboardState);
+loadDashboardState();
+renderSeasonRows();renderSeasonChart();renderCalendar();renderOverview();renderWorkouts();renderRecoveries();renderOrtho();renderZoneChart();
+</script><script>
+function updateCountdowns(){const today=new Date();today.setHours(0,0,0,0);[["raceCountdownBerlin","2027-06-05"],["raceCountdownOstseeman","2027-08-01"]].forEach(([id,date])=>{const el=document.getElementById(id);if(!el)return;const d=new Date(date+"T00:00:00");const days=Math.round((d-today)/86400000);el.textContent=days>=0?days+" Tage":"beendet";});}
+updateCountdowns();
+document.querySelectorAll('.mobile-nav button').forEach(b=>b.addEventListener('click',()=>{
+ document.querySelectorAll('nav button,.mobile-nav button').forEach(x=>x.classList.remove('active'));
+ document.querySelectorAll('.sheet').forEach(x=>x.classList.remove('active'));
+ b.classList.add('active');document.getElementById(b.dataset.sheet).classList.add('active');
+ const top=document.querySelector('nav');if(top){const match=top.querySelector(`[data-sheet="${b.dataset.sheet}"]`);if(match)match.classList.add('active');}
+ window.scrollTo({top:0,behavior:'smooth'});
+}));
+</script></body></html>
